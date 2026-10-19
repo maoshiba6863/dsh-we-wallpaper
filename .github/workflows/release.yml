@@ -1,0 +1,46 @@
+name: release
+
+# 打 tag（v*）时自动构建并发布 Release，附带可安装的 .tgz。
+# 用户安装方式：
+#   dsh plugin add <Release 里的 dsh-we-wallpaper-<版本>.tgz 地址>
+#
+# 说明：tarball 由 `npm pack` 生成（prepack 会先构建 lib/client.js），
+# 所以 Release 里的包是完整可用的，安装方不需要 Node/构建环境。
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 构建脚本只用 Node 内置模块，不需要 npm install
+      - name: 打包（prepack 会构建 lib/client.js）
+        run: npm pack
+
+      - name: 校验产物里有客户端入口
+        run: |
+          set -e
+          TGZ=$(ls dsh-we-wallpaper-*.tgz | head -1)
+          echo "tarball: $TGZ"
+          tar -tzf "$TGZ" | grep -qx "package/lib/client.js"
+          tar -tzf "$TGZ" | grep -qx "package/lib/index.js"
+          tar -tzf "$TGZ" | grep -qx "package/package.json"
+
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dsh-we-wallpaper-*.tgz
+          fail_on_unmatched_files: true
+          generate_release_notes: true

@@ -100,33 +100,41 @@
 1. 已经装好 DSH（桌面端或命令行均可）
 2. 想用本机壁纸的话，先装好 Wallpaper Engine 并订阅壁纸（只在 Windows 上能装；其它系统可以自己上传图片/视频，或把壁纸文件放到本机后用 `DSH_WE_STEAM_ROOT` 指向壁纸库）
 
-### 方式一：桌面端插件管理（推荐）
+### 方式一：从 Releases 安装（推荐）
 
-1. 打开 DSH 桌面端的插件管理
-2. 选择「添加插件」，选本仓库目录（部分 DSH 版本也支持直接粘贴仓库地址）
-3. 装好后重载界面
-
-### 方式二：命令行
+每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面已经包含构建好的 `lib/client.js`，不需要你自己编译。
 
 ```bash
-# 用本地目录安装（最稳）
-dsh plugin add /path/to/dsh-wallpaper-engine-main
-
-# 从 GitHub 安装（DSH 会交给包管理器处理）
-dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper
+dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/download/v1.0.0/dsh-we-wallpaper-1.0.0.tgz
 ```
 
-包名已定为 `dsh-we-wallpaper`，目前在 npm 上还没有发布；发布之后可以直接：
+桌面端也可以在插件管理里选「添加插件」，粘贴上面这个地址。
+
+> npm 暂不提供：这个包没有发布到 npm registry，请用 Releases 的 tgz。
+
+### 方式二：用本仓库源码
+
+直接克隆仓库的人要先构建一次（`lib/client.js` 是构建产物，不在仓库里）：
 
 ```bash
-dsh plugin add dsh-we-wallpaper
+git clone https://github.com/maoshiba6863/dsh-we-wallpaper.git
+cd dsh-we-wallpaper
+npm install
+npm run build
+
+# 然后把整个目录装进 DSH
+dsh plugin add /path/to/dsh-we-wallpaper
 ```
 
-升级时先移除再添加：
+### 升级 / 卸载
 
 ```bash
+# 升级：先移除旧版，再装新 tgz
 dsh plugin remove dsh-we-wallpaper
-dsh plugin add /path/to/dsh-wallpaper-engine-main
+dsh plugin add <新版 tgz 地址>
+
+# 卸载
+dsh plugin remove dsh-we-wallpaper
 ```
 
 > 命令行的具体用法以你所用 DSH 版本的 `dsh plugin --help` 为准；桌面端插件管理是同一套能力。
