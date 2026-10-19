@@ -321,6 +321,40 @@
     );
   }
 
+  function renderAppearanceFontSection(ctx) {
+    const {
+      sel, fontOpen, onToggleFontSection, onResetModule,
+      onGlobalFamily, onComponentFamily, onRefreshSystemFonts,
+      officialColorOf, onThemeDarkSeparate, onThemeColor, onThemeColorClear,
+      onThemeTypeOnly, onThemeSize, onThemeWeight, onThemeFamily,
+      onFontAdvanced, onComponentFont, fontSet, onToggleFontCustom,
+    } = ctx;
+    const sizes = sel.themeSize || {};
+    const weights = sel.themeWeight || {};
+    const families = sel.themeFamily || {};
+    const typeRoles = sel.themeTypeOnly === true
+      ? THEME_TYPE_ROLES.filter((role) => sizes[role.id] !== undefined
+        || weights[role.id] !== undefined || families[role.id] !== undefined)
+      : THEME_TYPE_ROLES;
+    const open = fontOpen !== false;
+    return React.createElement(React.Fragment, null,
+      React.createElement("div", { className: "we-picker__section" },
+        sectionHead(weT("字体"), open, onToggleFontSection, moduleResetButton("font", onResetModule)),
+        open && React.createElement(React.Fragment, null,
+          switchRow(weT("自定义界面字体"), sel.fontCustom === true, (e) => onToggleFontCustom && onToggleFontCustom(e.target.checked), {
+            hint: weT("关 = 全部跟随 DSH 默认；开 = 下面这些字号 / 字重 / 字族生效"),
+            tooltip: weT("总开关：关掉时下面的设置保留但不生效，整套界面回到 DSH 默认字体"),
+          }),
+          renderFontGlobalFamily(sel, onGlobalFamily, onComponentFamily, onRefreshSystemFonts),
+          renderFontColorRoles(sel, officialColorOf, onThemeDarkSeparate, onThemeColor, onThemeColorClear),
+          renderFontTypeRoles(sel, typeRoles, onThemeTypeOnly, onThemeSize, onThemeWeight, onThemeFamily),
+          renderFontComponents(sel, onFontAdvanced, onComponentFont, onComponentFamily),
+          fontSet ? renderFontSet(fontSet) : null,
+        ),
+      ),
+    );
+  }
+
   function sidebarCornerGroup(side, sideLabel, sel, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarAllCorners) {
     const radiusLabels = { native: weT("跟随原生"), 6: weT("小 6px"), 12: weT("中 12px"), 20: weT("大 20px") };
     const corners = [["tl", weT("左上")], ["tr", weT("右上")], ["br", weT("右下")], ["bl", weT("左下")]];
@@ -449,4 +483,4 @@
     );
   }
 
-export { renderAppearanceThemeSection, renderAppearanceDetailSection, renderAppearanceSidebarCornersSection, renderAppearanceUiColorSection };
+export { renderAppearanceThemeSection, renderAppearanceDetailSection, renderAppearanceFontSection, renderAppearanceSidebarCornersSection, renderAppearanceUiColorSection };

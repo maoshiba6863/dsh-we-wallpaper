@@ -12,6 +12,7 @@
     return React.createElement(React.Fragment, null,
       renderAppearanceThemeSection(ctx),
       renderAppearanceDetailSection(ctx),
+      renderAppearanceFontSection(ctx),
       renderAppearanceGlassSection(ctx),
       renderAppearanceSidebarCornersSection(ctx),
 

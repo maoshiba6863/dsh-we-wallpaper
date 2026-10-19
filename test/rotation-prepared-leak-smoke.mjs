@@ -274,7 +274,10 @@ const wallpaperV = { id:'v', title:'V', type:'video', playable:true, media:'/wal
 const scene = (id, tok) => ({ id, title:id.toUpperCase(), type:'scene', playable:false, media:null,
   frameUrl:'/wallpaper-engine/scene-frame/' + id, sceneLive:true, sceneLiveSrc:tok,
   sceneVideo:'/wallpaper-engine/scene-video/' + id, preview:'/wallpaper-engine/preview/' + id, contentrating:'Everyone' });
+// 这些场景只关心轮换/探针泄漏；启动欢迎视频会额外建一个 <video>，与本测试的
+// 「此刻应只有旧层那一个 video」直接冲突，所以在种子里显式关掉。
 const selSeed = (ids, cur) => ({ id:cur, rotationGroupId:'g1', rotationEnabled:true, videoVolume:0.6, videoAudioEnabled:true,
+  greetingOn:false,
   liveBootDelay:0,
   switchTransition:'fade',
   rotationGroups:[{ id:'g1', name:'L', interval:5, order:'sequence', wallpaperIds:ids }] });

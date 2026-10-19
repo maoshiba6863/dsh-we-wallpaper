@@ -19,6 +19,7 @@ const check = (label, cond, detail = '') => {
 };
 const React = { Fragment: 'Fragment', useState: (init) => [typeof init === 'function' ? init() : init, () => {}],
   useEffect: () => {}, useRef: (v) => ({ current: v }),
+  useSyncExternalStore: (_subscribe, getSnapshot) => getSnapshot(),
   createElement: (t, p, ...c) => { assertChildren(c); return typeof t === 'function' ? t(p || {}, ...c) : { type: t, props: p || null, children: c }; } };
 const HOST_VALUES = {
   themeColors: { primary: { light: '#112233', dark: '#aabbcc' } },
