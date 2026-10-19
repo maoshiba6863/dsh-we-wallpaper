@@ -21,6 +21,7 @@ Thumbs.db
 .idea/
 
 # 本地环境与密钥——永远不要提交
+/.npmrc
 .env
 .env.*
 !.env.example
