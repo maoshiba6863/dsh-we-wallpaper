@@ -1,0 +1,19 @@
+# 全仓文本文件在所有平台的检出都是 LF：守卫用按行锚定的字面替换做负对照，
+# CRLF 检出会让锚点不命中、把负对照判红。
+* text=auto eol=lf
+
+# 二进制资产：不参与 EOL 归一。
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.mp3  binary
+*.mp4  binary
+*.zip  binary

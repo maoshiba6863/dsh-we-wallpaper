@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安装 / 升级问题先看排障文档
+    url: https://github.com/maoshiba6863/dsh-we-wallpaper/blob/main/docs/TROUBLESHOOTING.md
+    about: 安装失败、升级顺序、常见症状的处置都在这里
+  - name: 问题怎么分诊与认领
+    url: https://github.com/maoshiba6863/dsh-we-wallpaper/blob/main/docs/TRIAGE.md
+    about: 标签含义、/assign 自动认领、从 issue 到 PR 的路径
+  - name: 提交新的问题或建议
+    url: https://github.com/maoshiba6863/dsh-we-wallpaper/issues/new/choose
+    about: 使用问题 / 功能建议请走 issue；能复现的 bug 请带上日志

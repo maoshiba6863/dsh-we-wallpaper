@@ -1,0 +1,157 @@
+{
+  "name": "dsh-we-wallpaper",
+  "version": "1.0.0",
+  "description": "把本机 Wallpaper Engine 壁纸放到 DSH 界面背后：场景/视频/网页/图片四类壁纸，液态玻璃外观、音频可视化、遮挡省电、费用显示。",
+  "type": "module",
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.1.5-rc.1"
+  },
+  "author": "maoshiba6863",
+  "contributors": [
+    {
+      "name": "elysia395",
+      "url": "https://github.com/elysia395"
+    },
+    {
+      "name": "oneincase",
+      "url": "https://github.com/oneincase"
+    }
+  ],
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "icon": "./icon.png",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maoshiba6863/dsh-we-wallpaper.git"
+  },
+  "homepage": "https://github.com/maoshiba6863/dsh-we-wallpaper#readme",
+  "bugs": {
+    "url": "https://github.com/maoshiba6863/dsh-we-wallpaper/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "wallpaper",
+    "wallpaper-engine",
+    "theme",
+    "background"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "icon.png",
+    "lib/index.js",
+    "lib/log.js",
+    "lib/notice.js",
+    "lib/routes/",
+    "lib/occlusion/",
+    "lib/fontsets/",
+    "lib/glass-presets/",
+    "lib/client.js",
+    "lib/http-body.js",
+    "lib/json-response.js",
+    "lib/pkg-read.js",
+    "lib/desktop-cover.js",
+    "lib/startup-timing.js",
+    "lib/billing.js",
+    "lib/billing-stream.js",
+    "lib/billing-balance.js",
+    "lib/scene-manifest.js",
+    "lib/settings-schema.js",
+    "lib/media/",
+    "lib/media-origin.js",
+    "lib/inventory.js",
+    "lib/serve.js",
+    "lib/faststart.js",
+    "lib/mp4-vfs.js",
+    "lib/media-probe.js",
+    "lib/scene-probe.js",
+    "lib/wallpaper-scan.js",
+    "lib/cache-prune.js",
+    "lib/config-store.js",
+    "lib/transcode.js",
+    "lib/steam-discovery.js",
+    "lib/host-diag.js",
+    "lib/upload-store.js",
+    "lib/video-preview.js",
+    "lib/asset-paths.js",
+    "lib/webwallgl/",
+    "lib/we-props.js",
+    "lib/we-focus-guard.js",
+    "lib/audio-tap.swift",
+    "lib/types/index.d.ts",
+    "lib/types/client.d.ts",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ],
+      "platform": "web",
+      "immediately": true
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build-client.mjs",
+    "verify": "node test/run-guards.mjs verify",
+    "verify:bridge": "node test/verify-media-bridge.mjs --provision",
+    "verify:e2e": "node test/e2e-web-media-origin.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "verify:static": "node test/verify-static.mjs",
+    "smoke": "node test/run-guards.mjs smoke",
+    "verify:all": "node test/run-guards.mjs all",
+    "prepack": "node scripts/prepare.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-runtime": ">=0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-ui-slots": ">=0.1.5-rc.1",
+    "@deepseek-ai/dsh-host-webserver": ">=0.1.5-rc.1",
+    "react": "^18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-runtime": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-client-ui-slots": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-host-webserver": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "webwallgl": "^3.0.0",
+    "x11": "^4.3.1"
+  },
+  "overrides": {
+    "js-yaml": "4.3.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.12.0",
+    "typescript": "^7.0.2"
+  }
+}

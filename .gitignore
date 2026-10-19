@@ -1,0 +1,32 @@
+# 依赖与缓存
+node_modules/
+.test-cache/
+.npm-cache/
+coverage/
+
+# 构建产物：lib/client.js 由 `npm run build`（prepack 亦会触发）现场生成
+/lib/client.js
+
+# 日志与打包产物
+*.log
+*.tgz
+*.zip
+
+# 系统与编辑器
+.DS_Store
+**/.DS_Store
+._*
+Thumbs.db
+.vscode/
+.idea/
+
+# 本地环境与密钥——永远不要提交
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.db

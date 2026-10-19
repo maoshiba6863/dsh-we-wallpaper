@@ -1,0 +1,18 @@
+{
+  "eslint": {
+    "filesLinted": 189,
+    "byRule": {
+      "require-atomic-updates": 8
+    }
+  },
+  "tsc": {
+    "byCode": {
+      "TS2322": 3,
+      "TS2339": 14,
+      "TS2349": 2,
+      "TS2353": 8,
+      "TS2554": 30,
+      "TS2810": 2
+    }
+  }
+}

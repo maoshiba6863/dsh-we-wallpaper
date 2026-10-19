@@ -1,0 +1,7 @@
+# dsh-we-wallpaper bundle patch.
+
+- insert:
+    - id: wallpaper-engine
+      name: 'dsh-we-wallpaper'
+      title: '壁纸'
+      description: '把本机 Wallpaper Engine 的壁纸放到界面背后，带液态玻璃外观与省电暂停。'
