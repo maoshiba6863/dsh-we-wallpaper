@@ -86,8 +86,26 @@ jobs:
       # 发布产物）：只有"探针也说这个环境执行不了它 + 产物可信"才记环境跳过，并在日志末尾**点名这条
       # 通道本次没有断言覆盖**；探针说执行得了、或产物不可信，照旧判红。引导预算仍是 90s
       #（宿主侧 `DSH_WE_MEDIA_BOOT_MS` 可覆盖，**现场默认 25s**），失败行会带子进程两路输出与 spawn 姿势。
-      - name: verify:bridge —— media-bridge 端到端（带 --provision）
-        run: npm run verify:bridge
+      # 这一步在 windows-latest 上已知会抖（同一 commit 的 push 腿红、PR 腿绿，重跑即过；
+      # 实测 3 次里有 2 次是握手/引导超时）。**只重试一次**：真回归仍会连续两次失败判红，
+      # 环境抖动则第二次通常就过，不必每次合并都被它卡一轮。
+      - name: verify:bridge —— media-bridge 端到端（带 --provision；失败重试一次）
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            echo "::group::verify:bridge 第 $attempt 次"
+            if npm run verify:bridge; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ "$attempt" -lt 2 ]; then
+              echo "::warning::verify:bridge 第 $attempt 次失败，重试一次（Windows runner 上的已知抖动）"
+              sleep 5
+            fi
+          done
+          echo "::error::verify:bridge 连续两次失败"
+          exit 1
 
       - name: smoke —— 节点级冒烟
         run: npm run smoke
