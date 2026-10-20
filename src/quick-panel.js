@@ -290,83 +290,15 @@
     );
   }
 
-  const QP_VIDEO_INTERVALS = [1, 5, 10, 30, 60];
-
-  function qpMinutesLabel(minutes) {
-    const n = Number(minutes) || 0;
-    if (n >= 60 && n % 60 === 0) return weT("{n} 小时", { n: n / 60 });
-    return weT("{n} 分钟", { n });
-  }
-
-  /* 轮播控制：紧贴当前壁纸那张卡片之后。按钮只做开关，细节（选哪些视频 / 间隔 / 过场）
-     收进「设置」——默认展开列表太占侧栏高度，而轮播一旦配好很少改。 */
-  function QpRotation(props) {
-    const sel = props.sel;
-    const [open, setOpen] = React.useState(false);
-    const group = videoRotationGroup(false);
-    const enabled = !!(group && sel.rotationEnabled && sel.rotationGroupId === group.id);
-    const chosen = group && Array.isArray(group.wallpaperIds) ? group.wallpaperIds : [];
-    const videos = videoWallpapers();
-    const interval = group && Number(group.interval) > 0 ? Number(group.interval) : 5;
-    const transition = SWITCH_TRANSITION_VALUES.indexOf(sel.switchTransition) >= 0
-      ? sel.switchTransition : "cut";
-
-    return React.createElement("div", { className: "we-qp__section we-qp__rotation" },
+  function qpRenderRotation(sel, groups, playable) {
+    return React.createElement("div", { className: "we-qp__section" },
       React.createElement("div", { className: "we-qp__row" },
-        React.createElement("button", {
-          className: "we-picker__btn" + (enabled ? " is-on" : ""),
-          type: "button",
-          onClick: () => { toggleVideoRotation(); if (!enabled) setOpen(true); },
-          title: weT("按选中的视频自动轮播；开启后按间隔切换，过场沿用下面选的动画"),
-        }, enabled ? weT("停止轮播") : weT("轮播")),
         React.createElement("button", {
           className: "we-picker__btn", type: "button",
           onClick: onNextWallpaper,
-          disabled: rotationCandidates().length < 2,
-          title: weT("立即切到下一张"),
+          disabled: playable.length < 2,
+          title: weT("切到下一张"),
         }, weT("下一张")),
-        React.createElement("button", {
-          className: "we-picker__btn", type: "button",
-          onClick: () => setOpen(!open),
-          "aria-expanded": open ? "true" : "false",
-          title: weT("选择参与轮播的视频、间隔与过场"),
-        }, open ? weT("收起") : weT("设置")),
-        React.createElement("span", { className: "we-picker__hint" },
-          weT("已选 {n} 个 · 每 {interval}", { n: chosen.length, interval: qpMinutesLabel(interval) })),
-      ),
-      open && React.createElement(React.Fragment, null,
-        React.createElement("div", { className: "we-qp__row" },
-          React.createElement("span", { className: "we-picker__hint we-qp__label" }, weT("间隔")),
-          React.createElement("div", { className: "we-picker__seg" },
-            QP_VIDEO_INTERVALS.map((m) => React.createElement("button", {
-              key: m, type: "button",
-              className: "we-picker__rate" + (interval === m ? " we-picker__rate--active" : ""),
-              onClick: () => onVideoRotationInterval(m),
-            }, m >= 60 ? weT("{n}小时", { n: m / 60 }) : weT("{n}分", { n: m }))))),
-        React.createElement("div", { className: "we-qp__row" },
-          React.createElement("span", { className: "we-picker__hint we-qp__label" }, weT("过场")),
-          React.createElement("select", {
-            className: "we-picker__select",
-            value: transition,
-            onChange: (e) => onSwitchTransition(e.target.value),
-            "aria-label": weT("切换过场"),
-          }, SWITCH_TRANSITIONS.map((t) => React.createElement("option", { key: t.id, value: t.id }, t.label)))),
-        React.createElement("div", { className: "we-qp__rotation-list" },
-          videos.length === 0
-            ? React.createElement("div", { className: "we-picker__hint" },
-              weT("没有可轮播的视频：上传 MP4，或安装视频类 Wallpaper Engine 壁纸"))
-            : videos.map((w) => React.createElement("label", {
-              key: w.id,
-              className: "we-qp__rotation-item" + (chosen.indexOf(w.id) >= 0 ? " is-on" : ""),
-            },
-              React.createElement("input", {
-                type: "checkbox",
-                checked: chosen.indexOf(w.id) >= 0,
-                onChange: () => onToggleRotationVideo(w.id),
-              }),
-              React.createElement("span", { className: "we-qp__rotation-name", title: w.title || "" }, w.title || w.id),
-              React.createElement("span", { className: "we-picker__hint" },
-                isUploadedWallpaper(w) ? weT("自定义") : weT("WE"))))),
       ),
     );
   }
@@ -661,6 +593,7 @@
       ? Math.floor(vStart / vwin.cols) * (vItemH + vGap) - vGap : 0;
     const vBtmH = vMeasured && rowsAfter > 0
       ? Math.ceil(rowsAfter / vwin.cols) * (vItemH + vGap) - vGap : 0;
+    const groups = sel.rotationGroups;
 
     const tabBodyClass = "we-qp__tabbody" + (qpTab === "wallpaper" ? " we-qp__tabbody--library" : "");
 
@@ -684,7 +617,7 @@
 
     return React.createElement("div", { className: "we-qp we-qp--" + dock },
       qpRenderCurrent(sel, current, playbackLive),
-      React.createElement(QpRotation, { sel }),
+      qpRenderRotation(sel, groups, playable),
       qpRenderTabs(qpTab, switchQpTab),
       propsAvailable && qpRenderPropsButton(qpTab, switchQpTab),
 
