@@ -21,34 +21,49 @@
       React.createElement("div", { className: "we-picker__section-head" },
         React.createElement("span", { className: "we-picker__section-label" }, weT("启动画面")),
       ),
-      switchRow(weT("播放欢迎视频"), sel.greetingOn !== false, (e) => onGreetingOn(e.target.checked)),
-      switchRow(weT("启动时铺满屏幕"), sel.coverOnStartup !== false, (e) => onCoverOnStartup(e.target.checked)),
-      sel.coverOnStartup !== false && React.createElement("div", {
-        className: "we-picker__hint we-picker__hint--cover",
+      switchRow(weT("启动动画"), sel.greetingOn !== false, (e) => onGreetingOn(e.target.checked), { key: "greeting-on" }),
+      sel.greetingOn !== false && React.createElement("div", {
+        className: "we-picker__ctl we-picker__ctl--wrap", key: "greeting-path",
       },
-        weT("需要 macOS 一次性授权（没给授权时窗口不会被铺满）：\n1. 系统设置 → 隐私与安全性 → 辅助功能 → 勾选「osascript」和「DeepSeek Harness」；列表里没有 osascript 就点 +，按 ⌘⇧G 输入 /usr/bin/osascript\n2. 系统设置 → 隐私与安全性 → 自动化 → 允许「DeepSeek Harness」控制「System Events」\n授权后 Cmd+Q 重开。")),
-      sel.greetingOn !== false && React.createElement("div", { className: "we-picker__ctl we-picker__ctl--wrap" },
-        ctlText(weT("视频路径（留空用默认）")),
+        ctlText(weT("视频路径（置空无画面）")),
         React.createElement("input", {
           className: "we-picker__text", type: "text",
           value: sel.greetingPath || "",
-          placeholder: "~/Movies/欢迎回来.mp4",
+          placeholder: "~/Movies/welcome.mp4",
           spellCheck: false,
           onInput: (e) => onGreetingPath(e.target.value),
         })),
+      switchRow(weT("启动时铺满屏幕"), sel.coverOnStartup !== false, (e) => onCoverOnStartup(e.target.checked), { key: "cover-on-startup" }),
+      sel.coverOnStartup !== false && React.createElement("div", {
+        className: "we-picker__hint we-picker__hint--cover",
+      },
+        weT("需要 macOS 一次性授权（没给授权时窗口不会被铺满）：\n1. 系统设置 → 隐私与安全性 → 辅助功能 → 勾选「osascript」和「DeepSeek Harness」；列表里没有 osascript 就点 +，按 ⌘⇧G 输入 /usr/bin/osascript\n2. 系统设置 → 隐私与安全性 → 自动化 → 允许「DeepSeek Harness」控制「System Events」\n授权后 Cmd+Q 重开。"))
     );
   }
 
   function renderSessionLayoutSection(ctx) {
     const { onChatLayout, sel } = ctx;
+    const current = sel.chatLayout === "spread" ? "spread" : "center";
     return React.createElement("div", { className: "we-picker__section" },
       React.createElement("div", { className: "we-picker__section-head" },
         React.createElement("span", { className: "we-picker__section-label" }, weT("会话布局")),
       ),
-      appearanceSegRow("system-chat-layout", weT("显示"), "", [
-        { id: "center", label: weT("居中") },
-        { id: "spread", label: weT("铺开") },
-      ], sel.chatLayout === "spread" ? "spread" : "center", (v) => onChatLayout(v)),
+      React.createElement("div", { className: "we-picker__ctl" },
+        React.createElement("div", {
+          className: "we-picker__seg we-picker__seg--joined",
+          role: "group",
+          "aria-label": weT("会话布局"),
+        },
+          [["center", weT("居中")], ["spread", weT("铺开")]].map(([id, label]) =>
+            React.createElement("button", {
+              key: id,
+              type: "button",
+              className: "we-picker__rate" + (current === id ? " we-picker__rate--active" : ""),
+              "aria-pressed": current === id,
+              onClick: () => onChatLayout(id),
+            }, label)),
+        ),
+      ),
     );
   }
 
