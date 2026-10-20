@@ -629,9 +629,98 @@ function groupWallpapers(group) {
       && !isHiddenWallpaper(w.id, selection.hiddenIds));
 }
 
+/* 视频轮播列表固定在 rotationGroups 里的这个 id 上：选视频、调间隔都不新增设置项。
+   注意：这个文件只允许开头那一个 /** 头注释 —— stripHeader 会把第一个 /** 当文件头切掉，
+   正文里再写 /** 会把前面的代码整段吃掉（实测踩过）。 */
+const VIDEO_ROTATION_GROUP_ID = "video-rotation";
+
 function rotationCandidates() {
-  return groupWallpapers(activeRotationGroup());
+  const group = activeRotationGroup();
+  if (group && group.id === VIDEO_ROTATION_GROUP_ID) {
+    /* 视频轮播只认「视频」这一类：不走 typeFilter（用户可能正把列表筛成图片），
+       但仍尊重隐藏名单 —— 隐藏掉的就是明确不想要。 */
+    const byId = wallpaperById();
+    return (group.wallpaperIds || [])
+      .map((id) => byId.get(id))
+      .filter((w) => w && w.type === "video" && !isHiddenWallpaper(w.id, selection.hiddenIds));
+  }
+  return groupWallpapers(group);
 }
+
+function videoWallpapers() {
+  return selection.inventory.wallpapers.filter((w) => w
+    && w.type === "video"
+    && !isHiddenWallpaper(w.id, selection.hiddenIds));
+}
+
+function videoRotationGroup(create) {
+  let group = selection.rotationGroups.find((g) => g.id === VIDEO_ROTATION_GROUP_ID);
+  if (!group && create) {
+    group = {
+      id: VIDEO_ROTATION_GROUP_ID,
+      name: weT("视频轮播"),
+      interval: clampNum(selection.rotationInterval, 1, 1440, 5),
+      order: "sequence",
+      wallpaperIds: [],
+    };
+    selection.rotationGroups.push(group);
+  }
+  return group || null;
+}
+
+function toggleVideoRotation() {
+  const group = videoRotationGroup(true);
+  const on = selection.rotationEnabled && selection.rotationGroupId === group.id;
+  if (on) {
+    selection.rotationEnabled = false;
+    cancelRotationPrepare();
+    persistSelection();
+    syncRotationTimer();
+    emit();
+    return;
+  }
+  selection.rotationEnabled = true;
+  selection.rotationGroupId = group.id;
+  /* 第一次开轮播时把当前这张视频自动选进来，省掉「开了但不知道要选」的空转。 */
+  if (!Array.isArray(group.wallpaperIds) || group.wallpaperIds.length === 0) {
+    group.wallpaperIds = selection.type === "video" && selection.id ? [selection.id] : [];
+  }
+  /* 硬切没有过场可看：轮播默认给交叉淡化，用户之后可在同一面板里换。 */
+  if (selection.switchTransition === "cut") selection.switchTransition = "fade";
+  if (!rotationCandidates().some((w) => w.id === selection.id)) {
+    const first = rotationCandidates()[0];
+    if (first) applySelection(first.id);
+  }
+  persistSelection();
+  syncRotationTimer();
+  emit();
+}
+
+function onToggleRotationVideo(id) {
+  const group = videoRotationGroup(true);
+  const ids = Array.isArray(group.wallpaperIds) ? group.wallpaperIds.slice() : [];
+  const at = ids.indexOf(id);
+  if (at >= 0) ids.splice(at, 1);
+  else ids.push(id);
+  group.wallpaperIds = ids;
+  if (ids.length === 0 && selection.rotationEnabled && selection.rotationGroupId === group.id) {
+    selection.rotationEnabled = false;
+    cancelRotationPrepare();
+  }
+  persistSelection();
+  syncRotationTimer();
+  emit();
+}
+
+function onVideoRotationInterval(minutes) {
+  const group = videoRotationGroup(true);
+  group.interval = clampNum(Number(minutes), 1, 1440, 5);
+  selection.rotationInterval = group.interval;
+  persistSelection();
+  syncRotationTimer();
+  emit();
+}
+
 
 function firstUsableGroup() {
   return selection.rotationGroups.find((g) => groupWallpapers(g).length >= 2) || null;

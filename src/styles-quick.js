@@ -139,6 +139,24 @@ const CSS_QUICK = `  /* ── 快捷播放面板（QuickPanel）：官方右侧
     overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable;
   }
   .we-qp__row { display: flex; align-items: center; gap: 8px; }
+  /* 轮播控制：视频多选列表限高自滚；勾选行整行可点，名字过长省略。 */
+  .we-qp__rotation-list {
+    display: flex; flex-direction: column; gap: 2px;
+    max-height: 180px; overflow-y: auto; overscroll-behavior: contain;
+    padding: 4px; border-radius: var(--we-ui-radius, 8px);
+    background: rgba(128, 128, 128, 0.06);
+  }
+  .we-qp__rotation-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 6px; border-radius: 6px; cursor: pointer;
+    font-size: 12px;
+  }
+  .we-qp__rotation-item:hover { background: var(--we-hover-bg, rgba(128, 128, 128, 0.16)); }
+  .we-qp__rotation-name {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .we-qp__label { flex: none; }
   .we-qp__search { width: 100%; box-sizing: border-box; }
   .we-qp__list { display: flex; flex-direction: column; gap: 2px; }
   /* 视图切换：搜索 + 分级筛选 + 类型筛选 + 列表/卡片，**确定性两行**。一行排下不可行 ——
