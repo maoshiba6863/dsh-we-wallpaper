@@ -123,13 +123,9 @@ function installSidebarRight(ctx) {
           kind: WE_SIDEBAR_KIND,
           keepMounted: true,
           title: () => weT("壁纸"),
-          guide: [{
-            id: "library",
-            order: 100,
-            title: () => weT("壁纸引擎"),
-            description: () => weT("本地 Wallpaper Engine 壁纸库与播放控制"),
-            icon: renderWeIcon,
-          }],
+          /* 空态右栏的引导列表里不再放「壁纸引擎」入口（用户口径：这边不需要）。
+             面板仍然从自己的页签进入；guide 传空数组，不占那三格默认入口。 */
+          guide: [],
         });
         disposeBody = ctx.slots.register(
           { name: "sidebar.right.pane.tab", key: WE_SIDEBAR_ID },
