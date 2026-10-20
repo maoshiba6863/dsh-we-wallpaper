@@ -214,7 +214,7 @@ function syncLayers() {
 
     const layerLive = (selection.type === "scene" || selection.type === "web") && liveRenderEnabled(selection);
 
-    const switchTr = switchTransitionOf(selection);
+    const switchTr = rotationFade ? rotationTransitionOf(selection) : switchTransitionOf(selection);
     const wantKey = layerWantKey(layerLive);
     let gotKey = existing && existing.dataset.weKey;
 

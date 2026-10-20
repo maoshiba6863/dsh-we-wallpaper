@@ -120,6 +120,26 @@ function switchTransitionOf(selLike) {
     ms: def.ms > 0 ? Math.max(60, Math.round(def.ms * speed.factor)) : 0,
   };
 }
+
+/* 自动轮播自己的过场：分组里存了 transition / transitionSpeed 就覆盖，
+   否则回落到全局「切换过场」——手动切换永远只看全局，互不串台。 */
+function rotationTransitionOf(selLike) {
+  const group = typeof activeRotationGroup === "function" ? activeRotationGroup() : null;
+  const rawId = group && typeof group.transition === "string" ? group.transition : "";
+  if (!rawId || SWITCH_TRANSITION_VALUES.indexOf(rawId) < 0) return switchTransitionOf(selLike);
+  const def = SWITCH_TRANSITIONS.find((t) => t.id === rawId) || SWITCH_TRANSITIONS[0];
+  const rawSpeed = group && typeof group.transitionSpeed === "string" ? group.transitionSpeed : "";
+  const speedId = SWITCH_SPEED_VALUES.indexOf(rawSpeed) >= 0 ? rawSpeed : (selLike && selLike.switchTransitionSpeed);
+  const speed = SWITCH_SPEEDS.find((s) => s.id === speedId) || SWITCH_SPEEDS[1];
+  const dir = selLike && SWITCH_DIRS.includes(selLike.switchTransitionDir)
+    ? selLike.switchTransitionDir : DEFAULTS.switchTransitionDir;
+  return {
+    id: rawId,
+    dir,
+    directional: SWITCH_DIRECTIONAL.includes(rawId),
+    ms: def.ms > 0 ? Math.max(60, Math.round(def.ms * speed.factor)) : 0,
+  };
+}
 function releaseLayerMedia(node) {
   if (!node) return;
   const v = node.querySelector("video");
