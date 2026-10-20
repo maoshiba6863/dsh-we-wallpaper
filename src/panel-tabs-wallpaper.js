@@ -1,5 +1,7 @@
   function renderWallpaperCurrentSection(ctx) {
     const { current, isLiveScene, onClear, onOpenPicker, onRefresh, onToggleAudio, onTogglePlay, onTogglePropsPanel, playbackLive, propsPanelOpen, renderUserPropsPanel, sel, setPickerOpener } = ctx;
+    const rotGroup = videoRotationGroup(false);
+    const rotationOn = !!(rotGroup && sel.rotationEnabled && sel.rotationGroupId === rotGroup.id);
     return React.createElement(React.Fragment, null,
 
     React.createElement("div", { className: "we-picker__section" },
@@ -79,8 +81,64 @@
           className: "we-picker__btn", type: "button",
           onClick: onRefresh, disabled: sel.loading,
         }, sel.loading ? weT("刷新中…") : weT("刷新")),
+        React.createElement("button", {
+          className: "we-picker__btn" + (rotationOn ? " is-on" : ""),
+          type: "button",
+          onClick: toggleVideoRotation,
+          title: weT("按下面勾选的视频自动轮播；间隔与参与的视频都在下方设置"),
+        }, rotationOn ? weT("停止轮播") : weT("轮播")),
       ),
+      renderWallpaperRotationBlock(sel),
     ),
+    );
+  }
+
+  const ROTATION_INTERVALS = [1, 5, 10, 30, 60];
+
+  function rotationMinutesLabel(minutes) {
+    const n = Number(minutes) || 0;
+    if (n >= 60 && n % 60 === 0) return weT("{n} 小时", { n: n / 60 });
+    return weT("{n} 分钟", { n });
+  }
+
+  /* 轮播明细：只出现在「当前壁纸」这一节里，紧跟在操作按钮行之后。 */
+  function renderWallpaperRotationBlock(sel) {
+    const group = videoRotationGroup(false);
+    const chosen = group && Array.isArray(group.wallpaperIds) ? group.wallpaperIds : [];
+    const videos = videoWallpapers();
+    const interval = group && Number(group.interval) > 0 ? Number(group.interval) : 5;
+    return React.createElement("div", { className: "we-picker__rotation" },
+      React.createElement("div", { className: "we-picker__row" },
+        React.createElement("span", { className: "we-picker__hint" },
+          weT("轮播范围：下面勾选的视频 · 已选 {n} 个 · 每 {interval}切一张", {
+            n: chosen.length, interval: rotationMinutesLabel(interval),
+          }))),
+      React.createElement("div", { className: "we-picker__ctl we-picker__ctl--wrap" },
+        ctlText(weT("间隔"), weT("等多久切到下一张")),
+        React.createElement("div", { className: "we-picker__seg" },
+          ROTATION_INTERVALS.map((m) => React.createElement("button", {
+            key: m, type: "button",
+            className: "we-picker__btn we-picker__rate" + (interval === m ? " we-picker__rate--active" : ""),
+            onClick: () => onVideoRotationInterval(m),
+          }, m >= 60 ? weT("{n}小时", { n: m / 60 }) : weT("{n}分", { n: m }))))),
+      React.createElement("div", { className: "we-picker__ctl we-picker__ctl--wrap" },
+        ctlText(weT("参与轮播的视频"), weT("只轮播勾选的视频；WE 视频壁纸与上传的 MP4 都算"))),
+      React.createElement("div", { className: "we-picker__rotation-list" },
+        videos.length === 0
+          ? React.createElement("div", { className: "we-picker__hint" },
+            weT("没有可轮播的视频：上传 MP4，或安装视频类 Wallpaper Engine 壁纸"))
+          : videos.map((w) => React.createElement("label", {
+            key: w.id,
+            className: "we-picker__rotation-item" + (chosen.indexOf(w.id) >= 0 ? " is-on" : ""),
+          },
+            React.createElement("input", {
+              type: "checkbox",
+              checked: chosen.indexOf(w.id) >= 0,
+              onChange: () => onToggleRotationVideo(w.id),
+            }),
+            React.createElement("span", { className: "we-picker__rotation-name", title: w.title || "" }, w.title || w.id),
+            React.createElement("span", { className: "we-picker__hint" },
+              isUploadedWallpaper(w) ? weT("自定义") : weT("WE"))))),
     );
   }
 

@@ -68,6 +68,26 @@ const CSS_PANEL = `  /* ── 效果页签空态：不摆一列无效滑块，�
   /* 播放失败 / 选择被过滤排除的原因（#84）: 紧跟在 meta 行下的一句可读说明，
      这两种情况都表现为「壁纸一片空白且无从下手」，故必须可见但克制。 */
   .we-picker__current-error { font-size: 0.75em; opacity: 0.9; margin-top: 2px; color: #e5534b; }
+  /* 视频轮播（当前壁纸下方）：视频多选列表限高自滚，勾选行整行可点。 */
+  .we-picker__rotation { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .we-picker__rotation-list {
+    display: flex; flex-direction: column; gap: 2px;
+    max-height: 220px; overflow-y: auto; overscroll-behavior: contain;
+    padding: 4px; border-radius: var(--we-ui-radius, 8px);
+    border: 1px solid var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.2));
+    background: rgba(128, 128, 128, 0.06);
+  }
+  .we-picker__rotation-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 6px; border-radius: 6px; cursor: pointer;
+    font-size: 0.82em;
+  }
+  .we-picker__rotation-item:hover { background: var(--we-hover-bg, rgba(128, 128, 128, 0.16)); }
+  .we-picker__rotation-item.is-on { background: rgba(128, 128, 128, 0.1); }
+  .we-picker__rotation-name {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   /* Primary action (选择壁纸): the ONE solid-accent control per view — accent
      is reserved for primary action + selection states, never decoration.
