@@ -358,16 +358,13 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     border-radius: 10px;
     background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
     overflow: hidden;
-    /* 3D：A 静态浮雕 —— 顶部内高光、底部内压暗、落地投影；B/C 的变量由 billing-layer.js 写入。 */
+    /* 3D：A 静态浮雕 —— 顶部内高光、底部内压暗、落地投影；B/C 的变量由 billing-layer.js 写入。
+       静态时不写 transform、也不挂 will-change：这卡片在设置窗玻璃的 backdrop 里，
+       常驻 3D 合成层会让设置窗滚动时频闪（实测）。3D 只在悬停时上。 */
     position: relative;
     transform-style: preserve-3d;
-    transform:
-      perspective(720px)
-      rotateX(var(--we-tilt-x, 0deg))
-      rotateY(var(--we-tilt-y, 0deg))
-      translateZ(var(--we-lift, 0px));
+    transform: none;
     transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 240ms ease;
-    will-change: transform;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.12),
       inset 0 -1px 0 rgba(0, 0, 0, 0.28),
@@ -375,6 +372,14 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
       0 12px 28px -14px rgba(0, 0, 0, 0.6);
   }
   /* 指针在卡片上时不加缓动，跟手；离开后回弹走上面的 320ms。 */
+  .we-billing-foot:hover,
+  .we-billing-foot.is-tilting {
+    transform:
+      perspective(720px)
+      rotateX(var(--we-tilt-x, 0deg))
+      rotateY(var(--we-tilt-y, 0deg))
+      translateZ(var(--we-lift, 0px));
+  }
   .we-billing-foot.is-tilting {
     transition: transform 90ms linear, box-shadow 240ms ease;
   }

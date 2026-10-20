@@ -93,7 +93,6 @@ const CSS_CHROME = `    /* ── 统一控件 token：一套高度/圆角/墨�
        specular sheen + inner edge highlight + diffuse shadow (panel rounds at 24px). */
     -webkit-backdrop-filter: blur(var(--we-settings-window-blur)) saturate(var(--we-saturate, 1.8));
     backdrop-filter: blur(var(--we-settings-window-blur)) saturate(var(--we-saturate, 1.8));
-    will-change: backdrop-filter;
     isolation: isolate;
     background-image: linear-gradient(
       180deg,
@@ -294,6 +293,7 @@ const CSS_CHROME = `    /* ── 统一控件 token：一套高度/圆角/墨�
   .we-picker__font-table .we-picker__fontset-confirm .we-picker__hint {
     margin-right: 8px;
   }
+
 `;
 
 export { CSS_CHROME };
