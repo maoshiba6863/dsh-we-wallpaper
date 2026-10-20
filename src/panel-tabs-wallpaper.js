@@ -86,9 +86,10 @@
           type: "button",
           onClick: toggleVideoRotation,
           title: weT("按下面勾选的视频自动轮播；间隔与参与的视频都在下方设置"),
-        }, rotationOn ? weT("停止轮播") : weT("轮播")),
+        }, rotationOn ? weT("停止轮播") : weT("背景轮播")),
       ),
-      renderWallpaperRotationBlock(sel),
+      /* 只有开启轮播后才展开明细（间隔 / 参与的视频）——关着的时候这一块不占位置。 */
+      rotationOn && renderWallpaperRotationBlock(sel),
     ),
     );
   }
