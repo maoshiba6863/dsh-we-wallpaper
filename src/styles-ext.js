@@ -358,6 +358,58 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     border-radius: 10px;
     background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
     overflow: hidden;
+    /* 3D：A 静态浮雕 —— 顶部内高光、底部内压暗、落地投影；B/C 的变量由 billing-layer.js 写入。 */
+    position: relative;
+    transform-style: preserve-3d;
+    transform:
+      perspective(720px)
+      rotateX(var(--we-tilt-x, 0deg))
+      rotateY(var(--we-tilt-y, 0deg))
+      translateZ(var(--we-lift, 0px));
+    transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 240ms ease;
+    will-change: transform;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+      0 1px 2px rgba(0, 0, 0, 0.28),
+      0 12px 28px -14px rgba(0, 0, 0, 0.6);
+  }
+  /* 指针在卡片上时不加缓动，跟手；离开后回弹走上面的 320ms。 */
+  .we-billing-foot.is-tilting {
+    transition: transform 90ms linear, box-shadow 240ms ease;
+  }
+  .we-billing-foot:hover {
+    --we-lift: 6px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.32),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      0 20px 40px -18px rgba(0, 0, 0, 0.7);
+  }
+  /* C 光斑：跟着指针走的径向高光，不拦鼠标事件。 */
+  .we-billing-foot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 3;
+    background: radial-gradient(
+      160px 120px at var(--we-glare-x, 50%) var(--we-glare-y, 50%),
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0.04) 38%,
+      transparent 62%);
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  .we-billing-foot:hover::after { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .we-billing-foot,
+    .we-billing-foot:hover {
+      transform: none;
+      transition: none;
+    }
+    .we-billing-foot::after { display: none; }
   }
   .we-billing-foot__row {
     display: flex;
@@ -405,7 +457,7 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
   }
@@ -467,7 +519,7 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--dsw-alias-label-secondary, #b6bdc9);
     white-space: nowrap;
   }
@@ -479,15 +531,19 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     background: var(--we-peak-color);
   }
   .we-billing-peak__time {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--dsw-alias-label-secondary, #b6bdc9);
     white-space: nowrap;
   }
   .we-billing-peak__meta {
-    font-size: 10px;
+    font-size: 11px;
     line-height: 12px;
     text-align: right;
     color: var(--dsw-alias-label-tertiary, #8b95a7);
+  }
+  /* 距转高峰不足 60 秒：切换说明改用高峰红，提示马上涨价。 */
+  .we-billing-peak__meta--soon {
+    color: var(--we-peak-high, #ff5f5f);
   }
   /* 模型汇总行：对照 1.9.7 简单模式底部的「今日 ¥x · N 模型」。 */
   .we-billing-foot__models {
@@ -557,6 +613,16 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* 本轮费用整行跟着靶心同色、同节拍呼吸：靶心 1.8s 的 0.55↔1，颜色取当前时段色。 */
+    color: var(--we-billing-target-color, var(--we-accent, #4f8cff));
+    animation: we-billing-summary-breathe 1.8s ease-in-out infinite;
+  }
+  @keyframes we-billing-summary-breathe {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .we-billing-turn__summary { animation: none; opacity: 0.9; }
   }
   .we-billing-turn__head {
     margin-top: 6px;
