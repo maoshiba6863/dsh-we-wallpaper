@@ -96,6 +96,10 @@ const CSS_SETTINGS = `  /* ── 预设方案：两行四列的圆角表格（�
     border-color: var(--we-accent, var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.35)));
     color: var(--we-accent, inherit);
   }
+  /* 面板已展开但轮播没在跑：只给一圈淡描边，不冒充「已开启」（用户口径 B）。 */
+  .we-picker__btn.is-open {
+    border-color: color-mix(in srgb, var(--we-accent, #4f8cff) 60%, transparent);
+  }
   .we-picker select {
     appearance: none; -webkit-appearance: none;
     height: var(--we-ui-h, 30px); padding: 0 8px;

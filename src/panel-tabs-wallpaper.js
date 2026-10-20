@@ -82,7 +82,7 @@
           onClick: onRefresh, disabled: sel.loading,
         }, sel.loading ? weT("刷新中…") : weT("刷新")),
         React.createElement("button", {
-          className: "we-picker__btn" + (rotationOn ? " is-on" : ""),
+          className: "we-picker__btn" + (rotationOn ? " is-on" : (sel.rotationConfigOpen ? " is-open" : "")),
           type: "button",
           onClick: toggleVideoRotation,
           title: weT("按下面勾选的视频自动轮播；间隔与参与的视频都在下方设置"),
@@ -145,6 +145,17 @@
             React.createElement("span", { className: "we-picker__rotation-name", title: w.title || "" }, w.title || w.id),
             React.createElement("span", { className: "we-picker__hint" },
               isUploadedWallpaper(w) ? weT("自定义") : weT("WE"))))),
+      /* 轮播摘要：紧跟在「参与轮播的视频」列表下面，别再挂到自定义壁纸那节 */
+      React.createElement("div", { className: "we-picker__row" },
+        React.createElement("span", { className: "we-picker__hint" },
+          weT("列表「{name}」：{count} 项 · {playable} 可播放 · 每 {interval} 分钟 · {order}{rotating}", {
+            name: (group && group.name) || weT("视频轮播"),
+            count: chosen.length,
+            playable: videos.filter((w) => chosen.indexOf(w.id) >= 0).length,
+            interval: interval,
+            order: group && group.order === "random" ? weT("随机") : weT("顺序", null, "seq"),
+            rotating: rotationOn ? weT(" · 自动轮转中") : "",
+          }))),
       /* 切换过场归轮播管：开启轮播时才出现，写回轮播分组（手动切换仍用全局那份）。 */
       renderWallpaperTransitionSection(ctx, {
         id: (group && group.transition) || sel.switchTransition,
@@ -225,7 +236,7 @@
   }
 
   function renderWallpaperUploadsSection(ctx) {
-    const { armedConfirm, group, onArmConfirm, onCancelEditUploadDir, onCancelEditWeAssetsDir, onDisarmConfirm, onStartEditUploadDir, onStartEditWeAssetsDir, onUploadDirDraft, onWeAssetsDirDraft, playableCount, playableList, sel, uploadedList } = ctx;
+    const { armedConfirm, onArmConfirm, onCancelEditUploadDir, onCancelEditWeAssetsDir, onDisarmConfirm, onStartEditUploadDir, onStartEditWeAssetsDir, onUploadDirDraft, onWeAssetsDirDraft, sel, uploadedList } = ctx;
     const uploadToken = (w) => "upload:" + w.id;
     return React.createElement(React.Fragment, null,
 
@@ -359,19 +370,6 @@
         )),
       ),
       ),
-    ),
-    React.createElement("div", { className: "we-picker__row" },
-      React.createElement("span", { className: "we-picker__hint" },
-        (group
-          ? weT("列表「{name}」：{count} 项 · {playable} 可播放 · 每 {interval} 分钟 · {order}{rotating}", {
-            name: group.name,
-            count: group.wallpaperIds.length,
-            playable: playableCount,
-            interval: group.interval,
-            order: group.order === "random" ? weT("随机") : weT("顺序", null, "seq"),
-            rotating: sel.rotationEnabled ? weT(" · 自动轮转中") : "",
-          })
-          : weT("{count} 个可播放壁纸{rotating}", { count: playableList.length, rotating: sel.rotationEnabled ? weT(" · 自动轮转中") : "" }))),
     ),
     );
   }

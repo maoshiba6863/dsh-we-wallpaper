@@ -653,6 +653,19 @@ function videoWallpapers() {
     && !isHiddenWallpaper(w.id, selection.hiddenIds));
 }
 
+/* 轮播能否接受这张壁纸：必须和 rotationCandidates() 用同一口径。
+   视频轮播只认「视频」且不受列表的类型/分级筛选影响 —— 否则候选里有、提交时又被
+   isRotatableWallpaper 用 typeFilter 拒掉，表现为「开着轮播但永远不切」。 */
+function rotationAcceptsWallpaper(w) {
+  const group = activeRotationGroup();
+  if (group && group.id === VIDEO_ROTATION_GROUP_ID) {
+    return Boolean(w) && w.type === "video" && !isHiddenWallpaper(w.id, selection.hiddenIds);
+  }
+  return Boolean(w)
+    && isRotatableWallpaper(w, selection.contentRatingFilter, selection.typeFilter)
+    && !isHiddenWallpaper(w.id, selection.hiddenIds);
+}
+
 function videoRotationGroup(create) {
   let group = selection.rotationGroups.find((g) => g.id === VIDEO_ROTATION_GROUP_ID);
   if (!group && create) {
@@ -686,10 +699,12 @@ function toggleVideoRotation() {
     group.wallpaperIds = selection.type === "video" && selection.id ? [selection.id] : [];
   }
   /* 少于 2 个不点亮轮播：轮播本质是「在这几张之间切」，1 张没有下一张。
-     此时只把配置面板摊开，让人接着勾 —— 点一下就开会让「已开启」和「不会切」自相矛盾。 */
+     此时按钮退化成「展开 / 收起配置面板」的开关 —— 点第一次摊开，点第二次收回，
+     不能只开不合。够 2 个时按钮仍旧是真正的开关（点亮轮播）。 */
   if (rotationCandidates().length < 2) {
+    const open = selection.rotationConfigOpen === true;
     selection.rotationEnabled = false;
-    setTransient("rotationConfigOpen", true);
+    setTransient("rotationConfigOpen", !open);
     persistSelection();
     syncRotationTimer();
     emit();
@@ -908,8 +923,7 @@ function commitRotationSwitch(prep) {
   prep.staged = null;
   const w = wallpaperById().get(prep.id);
   const valid = selection.rotationEnabled && selection.id === prep.fromId
-    && w && isRotatableWallpaper(w, selection.contentRatingFilter, selection.typeFilter)
-    && !isHiddenWallpaper(w.id, selection.hiddenIds);
+    && rotationAcceptsWallpaper(w);
   liveLog("rotation-commit", "wid=" + prep.id + " from=" + prep.fromId + " kind=" + (prep.kind || "-")
     + " valid=" + valid + " " + liveStateBrief());
   if (!valid) {
