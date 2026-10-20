@@ -721,6 +721,20 @@ function onVideoRotationInterval(minutes) {
   emit();
 }
 
+function onVideoRotationTransition(id) {
+  const group = videoRotationGroup(true);
+  group.transition = SWITCH_TRANSITION_VALUES.includes(id) ? id : "";
+  persistSelection();
+  emit();
+}
+
+function onVideoRotationTransitionSpeed(id) {
+  const group = videoRotationGroup(true);
+  group.transitionSpeed = SWITCH_SPEED_VALUES.includes(id) ? id : "";
+  persistSelection();
+  emit();
+}
+
 
 function firstUsableGroup() {
   return selection.rotationGroups.find((g) => groupWallpapers(g).length >= 2) || null;
