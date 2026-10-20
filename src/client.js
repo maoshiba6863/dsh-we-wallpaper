@@ -673,18 +673,30 @@ function toggleVideoRotation() {
   const on = selection.rotationEnabled && selection.rotationGroupId === group.id;
   if (on) {
     selection.rotationEnabled = false;
+    setTransient("rotationConfigOpen", false);
     cancelRotationPrepare();
     persistSelection();
     syncRotationTimer();
     emit();
     return;
   }
-  selection.rotationEnabled = true;
   selection.rotationGroupId = group.id;
   /* 第一次开轮播时把当前这张视频自动选进来，省掉「开了但不知道要选」的空转。 */
   if (!Array.isArray(group.wallpaperIds) || group.wallpaperIds.length === 0) {
     group.wallpaperIds = selection.type === "video" && selection.id ? [selection.id] : [];
   }
+  /* 少于 2 个不点亮轮播：轮播本质是「在这几张之间切」，1 张没有下一张。
+     此时只把配置面板摊开，让人接着勾 —— 点一下就开会让「已开启」和「不会切」自相矛盾。 */
+  if (rotationCandidates().length < 2) {
+    selection.rotationEnabled = false;
+    setTransient("rotationConfigOpen", true);
+    persistSelection();
+    syncRotationTimer();
+    emit();
+    return;
+  }
+  selection.rotationEnabled = true;
+  setTransient("rotationConfigOpen", true);
   /* 硬切没有过场可看：轮播默认给交叉淡化，用户之后可在同一面板里换。 */
   if (selection.switchTransition === "cut") selection.switchTransition = "fade";
   if (!rotationCandidates().some((w) => w.id === selection.id)) {
@@ -703,9 +715,11 @@ function onToggleRotationVideo(id) {
   if (at >= 0) ids.splice(at, 1);
   else ids.push(id);
   group.wallpaperIds = ids;
-  if (ids.length === 0 && selection.rotationEnabled && selection.rotationGroupId === group.id) {
+  /* 勾到只剩 1 个（或 0 个）时自动停：不允许「已开启但永远不会切」的状态。 */
+  if (ids.length < 2 && selection.rotationEnabled && selection.rotationGroupId === group.id) {
     selection.rotationEnabled = false;
     cancelRotationPrepare();
+    setTransient("rotationConfigOpen", true);
   }
   persistSelection();
   syncRotationTimer();

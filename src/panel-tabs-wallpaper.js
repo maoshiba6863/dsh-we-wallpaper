@@ -88,8 +88,9 @@
           title: weT("按下面勾选的视频自动轮播；间隔与参与的视频都在下方设置"),
         }, rotationOn ? weT("停止轮播") : weT("背景轮播")),
       ),
-      /* 只有开启轮播后才展开明细（间隔 / 参与的视频）——关着的时候这一块不占位置。 */
-      rotationOn && renderWallpaperRotationBlock(ctx),
+      /* 轮播明细：开启时显示；「点了按钮但不足 2 个视频」时也摊开（配置态），
+         让人先把视频勾够，而不是点亮一个永远不会切的开关。 */
+      (rotationOn || sel.rotationConfigOpen) && renderWallpaperRotationBlock(ctx),
     ),
     );
   }
@@ -109,7 +110,10 @@
     const chosen = group && Array.isArray(group.wallpaperIds) ? group.wallpaperIds : [];
     const videos = videoWallpapers();
     const interval = group && Number(group.interval) > 0 ? Number(group.interval) : 5;
+    const rotationOn = !!(group && sel.rotationEnabled && sel.rotationGroupId === group.id);
     return React.createElement("div", { className: "we-picker__rotation" },
+      !rotationOn && React.createElement("div", { className: "we-picker__hint" },
+        weT("勾选至少 2 个视频，再点「背景轮播」开启；只有 1 张时没有下一张可切")),
       React.createElement("div", { className: "we-picker__row" },
         React.createElement("span", { className: "we-picker__hint" },
           weT("轮播范围：下面勾选的视频 · 已选 {n} 个 · 每 {interval}切一张", {
