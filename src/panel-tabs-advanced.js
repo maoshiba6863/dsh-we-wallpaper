@@ -25,7 +25,7 @@
       sel.greetingOn !== false && React.createElement("div", {
         className: "we-picker__ctl we-picker__ctl--wrap", key: "greeting-path",
       },
-        ctlText(weT("视频路径（置空无画面）")),
+        ctlText(weT("视频路径（留空用默认）")),
         React.createElement("input", {
           className: "we-picker__text", type: "text",
           value: sel.greetingPath || "",

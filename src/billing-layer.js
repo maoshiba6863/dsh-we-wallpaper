@@ -182,10 +182,116 @@ function billingDuration(ms) {
 function BillingPeakStrip(props) {
   const peak = props.peak;
   const [now, setNow] = React.useState(Date.now());
+  const needleRef = React.useRef(null);
   React.useEffect(() => {
     if (typeof setInterval !== "function") return undefined;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => { if (typeof clearInterval === "function") clearInterval(timer); };
+  }, []);
+  const needlePctRef = React.useRef(0);
+  const swimmingRef = React.useRef(false);
+  const segsRef = React.useRef([]);
+  /* 停靠时位置跟着真实时间走；游动时由动画接管，避免两边打架。
+     注意：这里只能用 ref（needlePct 在提前 return 之后才计算，依赖它会抛错）。 */
+  React.useEffect(() => {
+    const el = needleRef.current;
+    if (!el || swimmingRef.current) return;
+    try { el.style.left = needlePctRef.current + "%"; } catch {   }
+  }, [now]);
+  React.useEffect(() => {
+    const el = needleRef.current;
+    if (!el || typeof el.animate !== "function" || typeof window === "undefined") return undefined;
+    if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let stopped = false;
+    let timer = 0;
+    let anim = null;
+    const wait = (ms) => new Promise((resolve) => {
+      timer = window.setTimeout(resolve, ms);
+    });
+    const glide = (from, to, duration) => new Promise((resolve) => {
+      if (stopped) { resolve(); return; }
+      try {
+        anim = el.animate([{ left: from.toFixed(2) + "%" }, { left: to.toFixed(2) + "%" }],
+          { duration, easing: "linear", fill: "forwards" });
+      } catch { resolve(); return; }
+      anim.onfinish = () => {
+        try { el.style.left = to + "%"; } catch {   }
+        try { anim.cancel(); } catch {   }
+        anim = null;
+        resolve();
+      };
+    });
+    /* 按时间条的分段变速：红段维持 12s/整条，绿段提速一倍（6s/整条）。 */
+    const isPeakAt = (pct) => {
+      const list = segsRef.current;
+      for (let i = 0; i < list.length; i += 1) {
+        const seg = list[i];
+        if (pct >= seg.a && pct <= seg.b) return seg.peak;
+      }
+      return false;
+    };
+    const glideSmart = async (from, to) => {
+      const dir = to >= from ? 1 : -1;
+      const cuts = [from, to];
+      const list = segsRef.current;
+      for (let i = 0; i < list.length; i += 1) {
+        const seg = list[i];
+        const bounds = [seg.a, seg.b];
+        for (let j = 0; j < bounds.length; j += 1) {
+          const b = bounds[j];
+          if ((b - from) * dir > 0.01 && (to - b) * dir > 0.01) cuts.push(b);
+        }
+      }
+      cuts.sort((x, y) => (dir === 1 ? x - y : y - x));
+      for (let i = 0; i < cuts.length - 1; i += 1) {
+        if (stopped) return;
+        const a = cuts[i];
+        const b = cuts[i + 1];
+        const peak = isPeakAt((a + b) / 2);
+        const width = Math.abs(b - a) / 100;
+        const dur = Math.max(140, width * (peak ? 12000 : 6000));
+        await glide(a, b, dur);
+      }
+    };
+    const setSwimming = (on) => {
+      try {
+        if (on) el.dataset.weSwim = "1";
+        else delete el.dataset.weSwim;
+      } catch {   }
+    };
+    (async () => {
+      let round = 1;                             // 停顿按轮递增：1→2→3→4→5 分钟后回到 1
+      while (!stopped) {
+        swimmingRef.current = false;             // 停靠：位置跟真实时间
+        setSwimming(false);                      // 停靠：上下浮动
+        await wait(Math.min(5, round) * 60000);
+        round = round >= 5 ? 1 : round + 1;
+        if (stopped) break;
+        swimmingRef.current = true;              // 游动：动画接管位置
+        setSwimming(true);
+        el.style.transform = "perspective(260px) rotateY(0deg)";
+        /* 按时间条实际宽度留出鲸鱼一半的宽度，避免在两端被裁掉。 */
+        const barWidth = el.parentElement ? el.parentElement.clientWidth : 0;
+        const edgePct = barWidth > 0 ? (17 / barWidth) * 100 : 6;
+        const lowPct = Math.min(50, Math.max(1.5, edgePct));
+        const highPct = Math.max(50, Math.min(98.5, 100 - edgePct));
+        await glideSmart(needlePctRef.current, highPct);
+        await wait(400);                         // 到右端停稳
+        el.style.transform = "perspective(260px) rotateY(180deg)";
+        await wait(900);                         // 缓慢掉头
+        await glideSmart(highPct, lowPct);
+        await wait(400);                         // 到左端停稳
+        el.style.transform = "perspective(260px) rotateY(0deg)";
+        await wait(900);
+        await glideSmart(lowPct, needlePctRef.current);   // 掉头后游回当前时间点
+      }
+    })();
+    return () => {
+      stopped = true;
+      if (timer) window.clearTimeout(timer);
+      if (anim) { try { anim.cancel(); } catch {   } }
+      try { el.style.transform = ""; } catch {   }
+    };
   }, []);
   if (!peak || !Number.isFinite(Number(peak.nextAtMs)) || !Number.isFinite(Number(peak.prevAtMs))) return null;
   const nextAt = Number(peak.nextAtMs);
@@ -219,7 +325,13 @@ function BillingPeakStrip(props) {
     }
   }
   const daySpan = Math.max(1, dayEnd - dayStart);
+  segsRef.current = segs.map((seg) => ({
+    a: ((Number(seg.startMs) - dayStart) / daySpan) * 100,
+    b: ((Number(seg.endMs) - dayStart) / daySpan) * 100,
+    peak: seg.peak === true,
+  }));
   const needlePct = Math.max(0, Math.min(100, ((now - dayStart) / daySpan) * 100));
+  needlePctRef.current = needlePct;
   const bars = segs.map((seg, i) => {
     const width = Math.max(0, Math.min(100, ((Number(seg.endMs) - Number(seg.startMs)) / daySpan) * 100));
     return React.createElement("span", {
@@ -237,9 +349,10 @@ function BillingPeakStrip(props) {
     React.createElement("span", { className: "we-billing-peak__bar" }, bars),
     React.createElement("span", {
       className: "we-billing-peak__needle",
-      style: { left: needlePct + "%" },
+      ref: needleRef,
       "aria-hidden": "true",
-    }),
+    },
+      React.createElement("span", { className: "we-billing-peak__needle-icon" })),
   );
 
   return React.createElement("div", { className: "we-billing-peak" + (inPeakNow ? " we-billing-peak--peak" : "") },
@@ -248,13 +361,16 @@ function BillingPeakStrip(props) {
       React.createElement("span", { className: "we-billing-peak__now", title: phase }, weT("当前")),
       React.createElement("span", { className: "we-billing-peak__time" }, weT("剩余 {time}", { time: billingDuration(Math.max(0, nextAt - now)) })),
     ),
-    React.createElement("div", { className: "we-billing-peak__legend" },
-      React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--low" }, weT("平价")),
-      React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--peak" }, weT("高峰")),
+    /* 图例和「09:00 转高峰」并到同一行：左图例、右切换说明。 */
+    React.createElement("div", { className: "we-billing-peak__footer" },
+      React.createElement("div", { className: "we-billing-peak__legend" },
+        React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--low" }, weT("平价")),
+        React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--peak" }, weT("高峰")),
+      ),
+      React.createElement("div", {
+        className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
+      }, switchText),
     ),
-    React.createElement("div", {
-      className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
-    }, switchText),
   );
 }
 
@@ -276,6 +392,55 @@ function BillingSidebarFooter() {
     let frame = 0;
     let px = 0.5;
     let py = 0.5;
+    /* 触边翻转：指针把卡片压到 ±10°（左/右 = rotateY、上/下 = rotateX）时翻 180°，
+       停 1 秒再转正；连续 3 次触发改成转 3 圈（1080°）后复原。 */
+    let edgeLatched = false;
+    let chain = 0;
+    let chainAt = 0;
+    let flipBusy = false;
+    let flipAnim = null;
+    const compose = (rx, ry) => "perspective(720px) rotateX(" + rx + "deg) rotateY(" + ry + "deg)";
+    const triggerFlip = (axis, dir) => {
+      if (flipBusy || typeof el.animate !== "function") return;
+      const tx = Number(((0.5 - py) * 20).toFixed(2));
+      const ty = Number(((px - 0.5) * 20).toFixed(2));
+      const now = Date.now();
+      chain = now - chainAt < 5000 ? chain + 1 : 1;
+      chainAt = now;
+      const triple = chain >= 3;
+      if (triple) chain = 0;
+      const delta = dir * (triple ? 1080 : 180);
+      const endX = axis === "x" ? tx + delta : tx;
+      const endY = axis === "y" ? ty + delta : ty;
+      const from = compose(tx, ty);
+      const to = compose(endX, endY);
+      flipBusy = true;
+      edgeLatched = true;
+      const frames = triple
+        ? [
+          { transform: from, offset: 0 },
+          { transform: to, offset: 0.82 },
+          { transform: from, offset: 1 },
+        ]
+        : [
+          { transform: from, offset: 0 },
+          { transform: to, offset: 0.22 },
+          { transform: to, offset: 0.78 },
+          { transform: from, offset: 1 },
+        ];
+      try {
+        flipAnim = el.animate(frames, {
+          duration: 1800,
+          easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
+          fill: "forwards",
+        });
+      } catch { flipBusy = false; return; }
+      flipAnim.onfinish = () => {
+        try { flipAnim.cancel(); } catch {   }
+        flipAnim = null;
+        flipBusy = false;
+      };
+    };
     const paint = () => {
       frame = 0;
       el.style.setProperty("--we-tilt-x", ((0.5 - py) * 20).toFixed(2) + "deg");
@@ -289,10 +454,21 @@ function BillingSidebarFooter() {
     };
     const onMove = (event) => {
       if (event.pointerType !== "mouse") return;
+      if (flipBusy) return;
       const rect = el.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       px = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
       py = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+      const tx = (0.5 - py) * 20;
+      const ty = (px - 0.5) * 20;
+      const ax = Math.abs(tx);
+      const ay = Math.abs(ty);
+      if (!edgeLatched && (ax >= 9.5 || ay >= 9.5)) {
+        if (ay >= ax) triggerFlip("y", ty >= 0 ? 1 : -1);
+        else triggerFlip("x", tx >= 0 ? 1 : -1);
+      } else if (edgeLatched && ax < 5 && ay < 5) {
+        edgeLatched = false;
+      }
       if (frame) return;
       if (typeof requestAnimationFrame === "function") frame = requestAnimationFrame(paint);
       else paint();
@@ -300,6 +476,7 @@ function BillingSidebarFooter() {
     const onLeave = () => {
       if (frame && typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
       frame = 0;
+      edgeLatched = false;
       el.classList.remove("is-tilting");
       el.style.setProperty("--we-tilt-x", "0deg");
       el.style.setProperty("--we-tilt-y", "0deg");
@@ -311,6 +488,7 @@ function BillingSidebarFooter() {
     el.addEventListener("pointerleave", onLeave);
     return () => {
       if (frame && typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
+      if (flipAnim) { try { flipAnim.cancel(); } catch {   } flipAnim = null; }
       el.removeEventListener("pointerenter", onEnter);
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);

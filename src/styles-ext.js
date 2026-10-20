@@ -453,10 +453,18 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     font-variant-numeric: tabular-nums;
   }
   .we-billing-peak--peak { --we-peak-color: var(--we-peak-high); }
+  .we-billing-peak__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
   .we-billing-peak__legend {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    flex: none;
   }
   .we-billing-peak__key {
     display: inline-flex;
@@ -477,7 +485,7 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   .we-billing-peak__key--peak { color: var(--we-peak-high); }
   .we-billing-peak__timeline {
     position: relative;
-    padding: 3px 0;
+    padding: 20px 0 3px;
   }
   .we-billing-peak__bar {
     display: flex;
@@ -490,28 +498,41 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   .we-billing-peak__seg--low { background: var(--we-peak-low); }
   .we-billing-peak__seg--peak { background: var(--we-peak-high); }
   .we-billing-peak__seg + .we-billing-peak__seg { box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.22); }
+  /* 当前时刻的指针：鲸鱼线稿（横向拉长、尾巴朝左）、头深尾浅的渐变；
+     平价=绿、高峰=红，随阶段切换。脚本驱动沿时间线来回游，停下才摆尾。 */
   .we-billing-peak__needle {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    margin-left: -1px;
-    border-radius: 2px;
-    background: #fff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+    top: auto;
+    bottom: 9px;
+    width: 30px;
+    height: 17px;
+    margin-left: -15px;
+    z-index: 2;
+    border-radius: 0;
+    background: none;
     pointer-events: none;
+    /* 固定初始姿态，避免第一轮从 none 过渡到带透视的姿态（看起来像在原地翻转）。 */
+    transform: perspective(260px) rotateY(0deg);
+    transform-style: preserve-3d;
+    transition: transform 900ms cubic-bezier(0.4, 0, 0.2, 1);   /* 缓慢转身 */
   }
-  .we-billing-peak__needle::after {
-    content: "";
-    position: absolute;
-    top: -2px;
-    left: 50%;
-    width: 8px;
-    height: 8px;
-    margin-left: -4px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  .we-billing-peak__needle-icon {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/png;base64,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") center bottom / contain no-repeat;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
+    /* 停下时只做轻微的上下浮动：旋转会让整条鱼看起来像在原地掉头，去掉。 */
+    animation: we-whale-idle-bob 1.8s ease-in-out infinite;
+  }
+  @keyframes we-whale-idle-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.5px); }
+  }
+  /* 游动中不摆尾；停下（停在真实当前时间点）才摆。 */
+  .we-billing-peak__needle[data-we-swim="1"] .we-billing-peak__needle-icon { animation: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .we-billing-peak__needle-icon { animation: none; }
   }
   .we-billing-peak__head {
     display: flex;
@@ -539,12 +560,18 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     font-size: 11px;
     color: var(--dsw-alias-label-secondary, #b6bdc9);
     white-space: nowrap;
+    margin-left: auto;   /* 无论 head 行怎么排，剩余时间始终贴右 */
+    text-align: right;
   }
   .we-billing-peak__meta {
     font-size: 11px;
     line-height: 12px;
     text-align: right;
     color: var(--dsw-alias-label-tertiary, #8b95a7);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   /* 距转高峰不足 60 秒：切换说明改用高峰红，提示马上涨价。 */
   .we-billing-peak__meta--soon {
