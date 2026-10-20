@@ -699,10 +699,12 @@ function toggleVideoRotation() {
     group.wallpaperIds = selection.type === "video" && selection.id ? [selection.id] : [];
   }
   /* 少于 2 个不点亮轮播：轮播本质是「在这几张之间切」，1 张没有下一张。
-     此时只把配置面板摊开，让人接着勾 —— 点一下就开会让「已开启」和「不会切」自相矛盾。 */
+     此时按钮退化成「展开 / 收起配置面板」的开关 —— 点第一次摊开，点第二次收回，
+     不能只开不合。够 2 个时按钮仍旧是真正的开关（点亮轮播）。 */
   if (rotationCandidates().length < 2) {
+    const open = selection.rotationConfigOpen === true;
     selection.rotationEnabled = false;
-    setTransient("rotationConfigOpen", true);
+    setTransient("rotationConfigOpen", !open);
     persistSelection();
     syncRotationTimer();
     emit();
