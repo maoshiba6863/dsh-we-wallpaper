@@ -653,6 +653,19 @@ function videoWallpapers() {
     && !isHiddenWallpaper(w.id, selection.hiddenIds));
 }
 
+/* 轮播能否接受这张壁纸：必须和 rotationCandidates() 用同一口径。
+   视频轮播只认「视频」且不受列表的类型/分级筛选影响 —— 否则候选里有、提交时又被
+   isRotatableWallpaper 用 typeFilter 拒掉，表现为「开着轮播但永远不切」。 */
+function rotationAcceptsWallpaper(w) {
+  const group = activeRotationGroup();
+  if (group && group.id === VIDEO_ROTATION_GROUP_ID) {
+    return Boolean(w) && w.type === "video" && !isHiddenWallpaper(w.id, selection.hiddenIds);
+  }
+  return Boolean(w)
+    && isRotatableWallpaper(w, selection.contentRatingFilter, selection.typeFilter)
+    && !isHiddenWallpaper(w.id, selection.hiddenIds);
+}
+
 function videoRotationGroup(create) {
   let group = selection.rotationGroups.find((g) => g.id === VIDEO_ROTATION_GROUP_ID);
   if (!group && create) {
@@ -908,8 +921,7 @@ function commitRotationSwitch(prep) {
   prep.staged = null;
   const w = wallpaperById().get(prep.id);
   const valid = selection.rotationEnabled && selection.id === prep.fromId
-    && w && isRotatableWallpaper(w, selection.contentRatingFilter, selection.typeFilter)
-    && !isHiddenWallpaper(w.id, selection.hiddenIds);
+    && rotationAcceptsWallpaper(w);
   liveLog("rotation-commit", "wid=" + prep.id + " from=" + prep.fromId + " kind=" + (prep.kind || "-")
     + " valid=" + valid + " " + liveStateBrief());
   if (!valid) {
