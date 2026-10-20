@@ -549,6 +549,18 @@ const CSS_PANEL = `  /* ── 效果页签空态：不摆一列无效滑块，�
     border-color: var(--we-accent, #4f8cff);
     color: #fff;
   }
+  /* 会话布局：两段并成一颗按钮（左居中 / 右铺开），中间共用一条描边，选中段整段强调色高亮。 */
+  .we-picker__seg--joined { gap: 0; border-radius: var(--we-ui-radius, 8px); }
+  .we-picker__seg--joined .we-picker__rate { border-radius: 0; }
+  .we-picker__seg--joined .we-picker__rate:first-child {
+    border-top-left-radius: var(--we-ui-radius, 8px);
+    border-bottom-left-radius: var(--we-ui-radius, 8px);
+  }
+  .we-picker__seg--joined .we-picker__rate:last-child {
+    margin-left: -1px;
+    border-top-right-radius: var(--we-ui-radius, 8px);
+    border-bottom-right-radius: var(--we-ui-radius, 8px);
+  }
 
 `;
 

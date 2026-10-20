@@ -195,6 +195,8 @@ function BillingPeakStrip(props) {
   const inPeakNow = crossed ? !(peak.inPeak === true) : peak.inPeak === true;
   const phase = inPeakNow ? weT("高峰") : peak.holiday ? weT("假日 · 谷价") : peak.weekend ? weT("周末 · 谷价") : weT("平价");
   const nextPhase = inPeakNow ? weT("转平价") : weT("转高峰");
+  /** 距下一次转高峰不足 60 秒：切换说明提前变红，提示马上进入高峰价。 */
+  const peakSoon = !crossed && !inPeakNow && nextAt - now > 0 && nextAt - now <= 60000;
   const switchText = crossed ? weT("计价时段切换中…") : billingClockText(nextAt) + nextPhase;
 
   const BJ_OFFSET = 8 * 3600000;
@@ -250,7 +252,9 @@ function BillingPeakStrip(props) {
       React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--low" }, weT("平价")),
       React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--peak" }, weT("高峰")),
     ),
-    React.createElement("div", { className: "we-billing-peak__meta" }, switchText),
+    React.createElement("div", {
+      className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
+    }, switchText),
   );
 }
 
@@ -262,6 +266,56 @@ function BillingSidebarFooter() {
     () => billingBalance.data,
     () => null,
   );
+  const cardRef = React.useRef(null);
+  /* 侧栏计费卡 3D：A 静态浮雕（CSS 阴影/高光）＋ B 指针视差（±10°）＋ C 光斑跟随。
+     每帧只改 CSS 变量，transform 走合成层；指针离开回弹，系统“减少动态效果”时整段不挂载。 */
+  React.useEffect(() => {
+    const el = cardRef.current;
+    if (!el || typeof window === "undefined" || typeof el.addEventListener !== "function") return undefined;
+    if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let frame = 0;
+    let px = 0.5;
+    let py = 0.5;
+    const paint = () => {
+      frame = 0;
+      el.style.setProperty("--we-tilt-x", ((0.5 - py) * 20).toFixed(2) + "deg");
+      el.style.setProperty("--we-tilt-y", ((px - 0.5) * 20).toFixed(2) + "deg");
+      el.style.setProperty("--we-glare-x", (px * 100).toFixed(1) + "%");
+      el.style.setProperty("--we-glare-y", (py * 100).toFixed(1) + "%");
+    };
+    const onEnter = (event) => {
+      if (event.pointerType !== "mouse") return;
+      el.classList.add("is-tilting");
+    };
+    const onMove = (event) => {
+      if (event.pointerType !== "mouse") return;
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      px = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      py = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+      if (frame) return;
+      if (typeof requestAnimationFrame === "function") frame = requestAnimationFrame(paint);
+      else paint();
+    };
+    const onLeave = () => {
+      if (frame && typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
+      frame = 0;
+      el.classList.remove("is-tilting");
+      el.style.setProperty("--we-tilt-x", "0deg");
+      el.style.setProperty("--we-tilt-y", "0deg");
+      el.style.setProperty("--we-glare-x", "50%");
+      el.style.setProperty("--we-glare-y", "50%");
+    };
+    el.addEventListener("pointerenter", onEnter);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    return () => {
+      if (frame && typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
+      el.removeEventListener("pointerenter", onEnter);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+    };
+  }, [enabled]);
   if (!enabled) return null;
   const data = entry && entry.data;
   const today = data ? data.today : 0;
@@ -295,6 +349,7 @@ function BillingSidebarFooter() {
   }
   return React.createElement("div", {
     className: "we-billing-foot",
+    ref: cardRef,
     title: weT("今日与本会话按宿主导出的 usage × 官方单价估算（含峰谷）；余额取官方账号；金额仅供参考"),
   }, ...nodes);
 }
