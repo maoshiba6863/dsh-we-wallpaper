@@ -2,7 +2,6 @@
     const { } = ctx;
     return React.createElement(React.Fragment, null,
       renderWallpaperCurrentSection(ctx),
-      renderWallpaperTransitionSection(ctx),
       renderWallpaperUploadsSection(ctx),
     );
   }

@@ -89,7 +89,7 @@
         }, rotationOn ? weT("停止轮播") : weT("背景轮播")),
       ),
       /* 只有开启轮播后才展开明细（间隔 / 参与的视频）——关着的时候这一块不占位置。 */
-      rotationOn && renderWallpaperRotationBlock(sel),
+      rotationOn && renderWallpaperRotationBlock(ctx),
     ),
     );
   }
@@ -103,7 +103,8 @@
   }
 
   /* 轮播明细：只出现在「当前壁纸」这一节里，紧跟在操作按钮行之后。 */
-  function renderWallpaperRotationBlock(sel) {
+  function renderWallpaperRotationBlock(ctx) {
+    const sel = ctx.sel;
     const group = videoRotationGroup(false);
     const chosen = group && Array.isArray(group.wallpaperIds) ? group.wallpaperIds : [];
     const videos = videoWallpapers();
@@ -122,26 +123,6 @@
             className: "we-picker__btn we-picker__rate" + (interval === m ? " we-picker__rate--active" : ""),
             onClick: () => onVideoRotationInterval(m),
           }, m >= 60 ? weT("{n}小时", { n: m / 60 }) : weT("{n}分", { n: m }))))),
-      React.createElement("div", { className: "we-picker__ctl" },
-        ctlText(weT("轮播过场"), weT("只作用于自动轮播；手动切换仍用下方「切换过场」")),
-        React.createElement("select", {
-          className: "we-picker__select",
-          value: group && group.transition ? group.transition : "",
-          onChange: (e) => onVideoRotationTransition(e.target.value),
-          "aria-label": weT("轮播过场"),
-        },
-          React.createElement("option", { value: "" }, weT("跟随「切换过场」")),
-          SWITCH_TRANSITIONS.map((t) => React.createElement("option", { key: t.id, value: t.id }, t.label)))),
-      React.createElement("div", { className: "we-picker__ctl" },
-        ctlText(weT("轮播过场时长"), weT("过场动画跑多快")),
-        React.createElement("select", {
-          className: "we-picker__select",
-          value: group && group.transitionSpeed ? group.transitionSpeed : "",
-          onChange: (e) => onVideoRotationTransitionSpeed(e.target.value),
-          "aria-label": weT("轮播过场时长"),
-        },
-          React.createElement("option", { value: "" }, weT("跟随「切换过场」")),
-          SWITCH_SPEEDS.map((sp) => React.createElement("option", { key: sp.id, value: sp.id }, sp.label)))),
       React.createElement("div", { className: "we-picker__ctl we-picker__ctl--wrap" },
         ctlText(weT("参与轮播的视频"), weT("只轮播勾选的视频；WE 视频壁纸与上传的 MP4 都算"))),
       React.createElement("div", { className: "we-picker__rotation-list" },
@@ -160,12 +141,30 @@
             React.createElement("span", { className: "we-picker__rotation-name", title: w.title || "" }, w.title || w.id),
             React.createElement("span", { className: "we-picker__hint" },
               isUploadedWallpaper(w) ? weT("自定义") : weT("WE"))))),
+      /* 切换过场归轮播管：开启轮播时才出现，写回轮播分组（手动切换仍用全局那份）。 */
+      renderWallpaperTransitionSection(ctx, {
+        id: (group && group.transition) || sel.switchTransition,
+        dir: (group && group.transitionDir) || sel.switchTransitionDir,
+        speed: (group && group.transitionSpeed) || sel.switchTransitionSpeed,
+        onId: onVideoRotationTransition,
+        onDir: onVideoRotationTransitionDir,
+        onSpeed: onVideoRotationTransitionSpeed,
+      }),
     );
   }
 
-  function renderWallpaperTransitionSection(ctx) {
+  /* 过场设置。轮播开启时由轮播块自己调用（opts 指定值/写回目标），
+     这样轮播的过场与手动切换的过场各自独立；单独调用时就是全局手动过场。 */
+  function renderWallpaperTransitionSection(ctx, opts) {
     const { onSwitchTransition, onSwitchTransitionDir, onSwitchTransitionSpeed, sel } = ctx;
-    const switchTr = switchTransitionOf(sel);
+    const o = opts || {};
+    const id = o.id !== undefined ? o.id : sel.switchTransition;
+    const dir = o.dir !== undefined ? o.dir : sel.switchTransitionDir;
+    const speed = o.speed !== undefined ? o.speed : sel.switchTransitionSpeed;
+    const pickId = o.onId || onSwitchTransition;
+    const pickDir = o.onDir || onSwitchTransitionDir;
+    const pickSpeed = o.onSpeed || onSwitchTransitionSpeed;
+    const switchTr = switchTransitionOf({ switchTransition: id, switchTransitionDir: dir, switchTransitionSpeed: speed });
     return React.createElement(React.Fragment, null,
 
     React.createElement("div", { className: "we-picker__section" },
@@ -177,8 +176,8 @@
         ctlText(weT("过场动画"), weT("换壁纸时的转场")),
         React.createElement("select", {
           className: "we-picker__select",
-          value: sel.switchTransition,
-          onChange: (e) => onSwitchTransition(e.target.value),
+          value: id,
+          onChange: (e) => pickId(e.target.value),
           "aria-label": weT("过场动画"),
         },
           ...SWITCH_TRANSITIONS.map((t) =>
@@ -192,10 +191,10 @@
           SWITCH_DIRS.map((d) =>
             React.createElement("button", {
               key: d,
-              className: "we-picker__btn we-picker__rate" + (sel.switchTransitionDir === d ? " we-picker__rate--active" : ""),
+              className: "we-picker__btn we-picker__rate" + (dir === d ? " we-picker__rate--active" : ""),
               type: "button",
-              onClick: () => onSwitchTransitionDir(d),
-              "aria-pressed": sel.switchTransitionDir === d ? "true" : "false",
+              onClick: () => pickDir(d),
+              "aria-pressed": dir === d ? "true" : "false",
               "aria-label": weT("过场方向 {dir}", { dir: weT(SWITCH_DIR_LABELS[d]) }),
             }, SWITCH_DIR_LABELS[d]),
           ),
@@ -205,15 +204,15 @@
       switchTr.ms > 0 && React.createElement("div", { className: "we-picker__ctl we-picker__ctl--wrap" },
         ctlText(weT("时长"), weT("当前约 {ms} ms", { ms: switchTr.ms })),
         React.createElement("div", { className: "we-picker__seg" },
-          SWITCH_SPEEDS.map((s) =>
+          SWITCH_SPEEDS.map((sp) =>
             React.createElement("button", {
-              key: s.id,
-              className: "we-picker__btn we-picker__rate" + (sel.switchTransitionSpeed === s.id ? " we-picker__rate--active" : ""),
+              key: sp.id,
+              className: "we-picker__btn we-picker__rate" + (speed === sp.id ? " we-picker__rate--active" : ""),
               type: "button",
-              onClick: () => onSwitchTransitionSpeed(s.id),
-              "aria-pressed": sel.switchTransitionSpeed === s.id ? "true" : "false",
-              "aria-label": weT("过场速度 {speed}", { speed: weT(s.label) }),
-            }, s.label),
+              onClick: () => pickSpeed(sp.id),
+              "aria-pressed": speed === sp.id ? "true" : "false",
+              "aria-label": weT("过场速度 {speed}", { speed: weT(sp.label) }),
+            }, sp.label),
           ),
         ),
       ),
