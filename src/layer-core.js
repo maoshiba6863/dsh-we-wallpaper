@@ -131,8 +131,10 @@ function rotationTransitionOf(selLike) {
   const rawSpeed = group && typeof group.transitionSpeed === "string" ? group.transitionSpeed : "";
   const speedId = SWITCH_SPEED_VALUES.indexOf(rawSpeed) >= 0 ? rawSpeed : (selLike && selLike.switchTransitionSpeed);
   const speed = SWITCH_SPEEDS.find((s) => s.id === speedId) || SWITCH_SPEEDS[1];
-  const dir = selLike && SWITCH_DIRS.includes(selLike.switchTransitionDir)
-    ? selLike.switchTransitionDir : DEFAULTS.switchTransitionDir;
+  const rawDir = group && typeof group.transitionDir === "string" ? group.transitionDir : "";
+  const dir = rawDir && SWITCH_DIRS.includes(rawDir) ? rawDir
+    : (selLike && SWITCH_DIRS.includes(selLike.switchTransitionDir)
+      ? selLike.switchTransitionDir : DEFAULTS.switchTransitionDir);
   return {
     id: rawId,
     dir,

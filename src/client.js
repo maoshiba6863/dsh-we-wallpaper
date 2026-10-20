@@ -721,16 +721,30 @@ function onVideoRotationInterval(minutes) {
   emit();
 }
 
+/* 轮播面板里的过场既写进轮播分组，也同步到全局那份：关掉轮播后手动切换不会突然没动画。 */
 function onVideoRotationTransition(id) {
   const group = videoRotationGroup(true);
-  group.transition = SWITCH_TRANSITION_VALUES.includes(id) ? id : "";
+  const next = SWITCH_TRANSITION_VALUES.includes(id) ? id : "";
+  group.transition = next;
+  if (next) selection.switchTransition = next;
   persistSelection();
   emit();
 }
 
 function onVideoRotationTransitionSpeed(id) {
   const group = videoRotationGroup(true);
-  group.transitionSpeed = SWITCH_SPEED_VALUES.includes(id) ? id : "";
+  const next = SWITCH_SPEED_VALUES.includes(id) ? id : "";
+  group.transitionSpeed = next;
+  if (next) selection.switchTransitionSpeed = next;
+  persistSelection();
+  emit();
+}
+
+function onVideoRotationTransitionDir(dir) {
+  const group = videoRotationGroup(true);
+  const next = SWITCH_DIRS.includes(dir) ? dir : "";
+  group.transitionDir = next;
+  if (next) selection.switchTransitionDir = next;
   persistSelection();
   emit();
 }
