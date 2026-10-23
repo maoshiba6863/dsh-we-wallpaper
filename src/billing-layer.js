@@ -166,6 +166,21 @@ function billingClockText(atMs) {
   }
 }
 
+/* 跨天时给切换时间加星期前缀（如「周一 09:00」），避免误读成今天。 */
+function billingBeijingDay(atMs) {
+  const d = new Date(Number(atMs) + 8 * 3600 * 1000);
+  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+}
+function billingWeekdayPrefix(atMs, nowMs) {
+  if (billingBeijingDay(atMs) === billingBeijingDay(nowMs)) return "";
+  try {
+    return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", weekday: "short" }).format(new Date(atMs)) + " ";
+  } catch {
+    const d = new Date(Number(atMs) + 8 * 3600 * 1000);
+    return "周" + "日一二三四五六"[d.getUTCDay()] + " ";
+  }
+}
+
 function billingDuration(ms) {
   const minutes = Math.max(1, Math.ceil(ms / 60000));
   const days = Math.floor(minutes / 1440);
@@ -303,7 +318,7 @@ function BillingPeakStrip(props) {
   const nextPhase = inPeakNow ? weT("转平价") : weT("转高峰");
   /** 距下一次转高峰不足 60 秒：切换说明提前变红，提示马上进入高峰价。 */
   const peakSoon = !crossed && !inPeakNow && nextAt - now > 0 && nextAt - now <= 60000;
-  const switchText = crossed ? weT("计价时段切换中…") : billingClockText(nextAt) + nextPhase;
+  const switchText = crossed ? weT("计价时段切换中…") : billingWeekdayPrefix(nextAt, now) + billingClockText(nextAt) + nextPhase;
 
   const BJ_OFFSET = 8 * 3600000;
   let segs = Array.isArray(peak.segments) && peak.segments.length ? peak.segments : null;
