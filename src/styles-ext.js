@@ -354,6 +354,13 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
+    /* 卡片自带一套墨水色：它有自己的底（浅色主题白底、深色主题深底），
+       不能跟着「字体/配色」里的正文色走 —— 否则浅色主题 + 白色正文就是白字压白底。
+       这里只覆盖本卡片子树的别名令牌，宿主的其它区域不受影响。 */
+    --dsw-alias-label-primary: #0f1115;
+    --dsw-alias-label-primary-dimmed: #3c424c;
+    --dsw-alias-label-secondary: #3c424c;
+    --dsw-alias-label-tertiary: #5b616b;
     border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.14));
     border-radius: 10px;
     background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
@@ -370,6 +377,12 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
       inset 0 -1px 0 rgba(0, 0, 0, 0.28),
       0 1px 2px rgba(0, 0, 0, 0.28),
       0 12px 28px -14px rgba(0, 0, 0, 0.6);
+  }
+  body[data-ds-dark-theme] .we-billing-foot {
+    --dsw-alias-label-primary: #f4f6fa;
+    --dsw-alias-label-primary-dimmed: #c3cad4;
+    --dsw-alias-label-secondary: #c3cad4;
+    --dsw-alias-label-tertiary: #98a1ae;
   }
   /* 指针在卡片上时不加缓动，跟手；离开后回弹走上面的 320ms。 */
   .we-billing-foot:hover,
