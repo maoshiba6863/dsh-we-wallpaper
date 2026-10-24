@@ -3297,22 +3297,45 @@ const CHAT_LAYOUT_CSS = `
 /* Conversation column: drop the width cap and centering. :has first; .icaHSq_column as fallback. */
 body[data-we-chat-layout="spread"] *:has(> [data-slot="conversation.chat.flow"]),
 body[data-we-chat-layout="spread"] .icaHSq_column { max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; }
-/* Assistant replies: left-aligned bubble (user messages keep the native right-side userRow). Node kind is assistant-step. */
-body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"],
-body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
+/* Assistant replies: left-aligned bubble (user messages keep the native right-side userRow). Node kind is assistant-step.
+   只给"真的有内容"的回复画气泡：正文必然落在 p/列表/代码/表格/图片上。宿主还有大量空的
+   步骤行（收起的过程、只有头像的行），给它们加 padding 会撑出小方块或一条满宽的浅色横条。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(:is(p, ul, ol, pre, table, blockquote, img)),
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(:is(p, ul, ol, pre, table, blockquote, img)) {
   background: var(--dsw-specific-bubble, rgba(127, 127, 127, 0.12));
   border-radius: var(--dsw-radius-xl, 14px);
   padding: 12px 16px;
   width: fit-content;
   max-width: 100%;
   margin-right: auto;
-  /* width: fit-content 只把气泡本身卡在 max-width；里面的宽表格 / 宽代码块仍按 min-content
-     撑出去，于是文字和表格边框会画到气泡外面。让气泡自己成为横向滚动容器：
-     min-width: 0 允许它收缩，overflow-x: auto 把超宽内容收进气泡里滚。
-     注意 overflow 两轴不能只写一个：另一轴写 visible 会被计算成 auto（会多出竖向滚动条）。 */
+  /* 气泡是 flex 项，min-width 默认 auto（= min-content）会顶着 max-width 一起变大，
+     宽表格就把气泡撑到列外。min-width: 0 只允许它缩，不改宽度算法。 */
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  box-sizing: border-box;
+  /* 兜底：气泡负责"所有内容都别跑出去"。overflow: clip 只裁切、不生成滚动容器，
+     不会像 auto 那样把气泡压窄或长出滚动条；表格的线条/边框再宽也只会被裁在圆角内。 */
+  overflow: clip;
+}
+/* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(table),
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(table) {
+  width: 100%;
+}
+/* 表格永远按气泡宽度排：宿主给 th/td 写死了 min-width:100px，6 列的表在窄窗口下最小宽度
+   就超过气泡，于是表格顶出气泡、或者在宿主的 _tableScroll 里出现横向滚动条。
+   允许列压小 + 单元格换行，表格就永远收在气泡里（代价是列多的表会变高）。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] table,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table {
+  width: 100%;
+  max-width: 100%;
+}
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] table th,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] table td,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table th,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table td {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
