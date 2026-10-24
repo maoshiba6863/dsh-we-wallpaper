@@ -198,6 +198,10 @@ function BillingPeakStrip(props) {
   const peak = props.peak;
   const [now, setNow] = React.useState(Date.now());
   const needleRef = React.useRef(null);
+  const iconRef = React.useRef(null);
+  const dotsRef = React.useRef(null);
+  const particleTimers = React.useRef([]);
+  const dotCount = React.useRef(0);
   React.useEffect(() => {
     if (typeof setInterval !== "function") return undefined;
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -210,16 +214,105 @@ function BillingPeakStrip(props) {
      注意：这里只能用 ref（needlePct 在提前 return 之后才计算，依赖它会抛错）。 */
   React.useEffect(() => {
     const el = needleRef.current;
-    if (!el || swimmingRef.current) return;
-    try { el.style.left = needlePctRef.current + "%"; } catch {   }
+    if (!el) return;
+    try {
+      const track = el.parentElement;
+      /* 光带始终按真实时间推进，与鲸鱼游到哪里无关。 */
+      if (track) track.style.setProperty("--we-now-pct", needlePctRef.current + "%");
+      if (!swimmingRef.current) el.style.left = needlePctRef.current + "%";
+    } catch {   }
   }, [now]);
   React.useEffect(() => {
     const el = needleRef.current;
     if (!el || typeof el.animate !== "function" || typeof window === "undefined") return undefined;
     if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const iconEl = iconRef.current;
+    const dotsEl = dotsRef.current;
+    const trackEl = el.parentElement;
+    /* 游动只移动鲸鱼，不动光带（光带只跟真实时间）。 */
+    const syncNow = (pct) => {
+      try { el.style.left = pct + "%"; } catch {   }
+    };
     let stopped = false;
     let timer = 0;
     let anim = null;
+    const SLOTS = [[0, -4], [0, -2], [0, 0], [0, 2], [0, 4]];
+    const clearParticles = () => {
+      dotCount.current = 0;
+      const list = particleTimers.current;
+      for (let i = 0; i < list.length; i += 1) { try { window.clearTimeout(list[i]); } catch {   } }
+      particleTimers.current = [];
+      if (dotsEl) { try { dotsEl.textContent = ""; } catch {   } }
+      if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
+    };
+    /* 停稳后 1 / 3 / 5 三批发射：离得近的更快；到达后堆成 10px 高的竖线。 */
+    const spawnParticles = () => {
+      if (!dotsEl || typeof document === "undefined") return;
+      const track = el.parentElement;
+      const trackW = track ? track.clientWidth : 0;
+      const dist = Math.max(0, (needlePctRef.current / 100) * trackW);
+      /* 极端情况（00:00 附近）：没有飞行距离，直接显示竖线，避免标记消失。 */
+      if (!(dist > 4)) {
+        if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
+        const line = document.createElement("i");
+        line.className = "we-billing-peak__line";
+        dotsEl.appendChild(line);
+        return;
+      }
+      clearParticles();
+      /* 只发刚好填满竖线的那几颗，填完就停，不再撒一堆。 */
+      const waves = [[0, 1], [320, 1], [640, 1], [960, 1], [1280, 1]];
+      for (let w = 0; w < waves.length; w += 1) {
+        const delay = waves[w][0];
+        const count = waves[w][1];
+        for (let k = 0; k < count; k += 1) {
+          const tid = window.setTimeout(() => {
+            if (stopped || swimmingRef.current || !dotsEl) return;
+            const d0 = dist * (0.65 + Math.random() * 0.35);
+            const speed = 60 + 120 * (1 - d0 / Math.max(1, dist));
+            const duration = Math.max(600, (d0 / speed) * 1000);
+            const jitter = (Math.random() - 0.5) * 6;
+            const fly = document.createElement("i");
+            fly.className = "we-billing-peak__particle";
+            dotsEl.appendChild(fly);
+            let fa = null;
+            try {
+              fa = fly.animate([
+                { transform: "translate(" + (-d0).toFixed(1) + "px," + jitter.toFixed(1) + "px)", opacity: 0.12, filter: "brightness(0.25)" },
+                { transform: "translate(0px,0px)", opacity: 1, filter: "brightness(1)" },
+              ], { duration, easing: "ease-in", fill: "forwards" });
+            } catch {   }
+            const land = () => {
+              try { if (fa) fa.cancel(); } catch {   }
+              try { fly.remove(); } catch {   }
+              if (!dotsEl || stopped) return;
+              const slot = SLOTS[dotCount.current % SLOTS.length];
+              dotCount.current += 1;
+              if (trackEl) {
+                try {
+                  trackEl.style.setProperty("--we-fill", String(Math.min(1, dotCount.current / SLOTS.length)));
+                } catch {   }
+              }
+              const solid = document.createElement("i");
+              solid.className = "we-billing-peak__dot";
+              solid.style.left = slot[0] + "px";
+              solid.style.top = slot[1] + "px";
+              solid.style.animationDelay = (dotCount.current * 130) + "ms";
+              dotsEl.appendChild(solid);
+              /* 填满后收成一条完整竖线，只保留呼吸。 */
+              if (dotCount.current >= SLOTS.length) {
+                try { dotsEl.textContent = ""; } catch {   }
+                const line = document.createElement("i");
+                line.className = "we-billing-peak__line";
+                dotsEl.appendChild(line);
+              }
+            };
+            if (fa) fa.onfinish = land; else window.setTimeout(land, duration);
+          }, delay + k * 90);
+          particleTimers.current.push(tid);
+        }
+      }
+    };
     const wait = (ms) => new Promise((resolve) => {
       timer = window.setTimeout(resolve, ms);
     });
@@ -230,7 +323,7 @@ function BillingPeakStrip(props) {
           { duration, easing: "linear", fill: "forwards" });
       } catch { resolve(); return; }
       anim.onfinish = () => {
-        try { el.style.left = to + "%"; } catch {   }
+        syncNow(to);
         try { anim.cancel(); } catch {   }
         anim = null;
         resolve();
@@ -279,17 +372,17 @@ function BillingPeakStrip(props) {
       while (!stopped) {
         swimmingRef.current = false;             // 停靠：位置跟真实时间
         setSwimming(false);                      // 停靠：上下浮动
+        spawnParticles();                        // 停稳后粒子逐批撞向鲸鱼
         await wait(Math.min(5, round) * 60000);
         round = round >= 5 ? 1 : round + 1;
         if (stopped) break;
+        clearParticles();                        // 游动：清掉粒子与竖线
         swimmingRef.current = true;              // 游动：动画接管位置
         setSwimming(true);
         el.style.transform = "perspective(260px) rotateY(0deg)";
-        /* 按时间条实际宽度留出鲸鱼一半的宽度，避免在两端被裁掉。 */
-        const barWidth = el.parentElement ? el.parentElement.clientWidth : 0;
-        const edgePct = barWidth > 0 ? (17 / barWidth) * 100 : 6;
-        const lowPct = Math.min(50, Math.max(1.5, edgePct));
-        const highPct = Math.max(50, Math.min(98.5, 100 - edgePct));
+        /* 轨道的 0% / 100% 就是 00:00 / 24:00，鲸鱼到端点时允许探出轨道（卡片内有空间）。 */
+        const lowPct = 0;
+        const highPct = 100;
         await glideSmart(needlePctRef.current, highPct);
         await wait(400);                         // 到右端停稳
         el.style.transform = "perspective(260px) rotateY(180deg)";
@@ -305,6 +398,7 @@ function BillingPeakStrip(props) {
       stopped = true;
       if (timer) window.clearTimeout(timer);
       if (anim) { try { anim.cancel(); } catch {   } }
+      clearParticles();
       try { el.style.transform = ""; } catch {   }
     };
   }, []);
@@ -347,33 +441,31 @@ function BillingPeakStrip(props) {
   }));
   const needlePct = Math.max(0, Math.min(100, ((now - dayStart) / daySpan) * 100));
   needlePctRef.current = needlePct;
-  const bars = segs.map((seg, i) => {
-    const width = Math.max(0, Math.min(100, ((Number(seg.endMs) - Number(seg.startMs)) / daySpan) * 100));
-    return React.createElement("span", {
-      key: "seg-" + i,
-      className: "we-billing-peak__seg " + (seg.peak ? "we-billing-peak__seg--peak" : "we-billing-peak__seg--low"),
-      style: { width: width + "%" },
-      title: billingClockText(Number(seg.startMs)) + "–" + billingClockText(Number(seg.endMs)) + (seg.peak ? " 高峰" : " 平价"),
-    });
-  });
   const timeline = React.createElement("div", {
     className: "we-billing-peak__timeline",
     role: "img",
-    "aria-label": weT("今日计价时段：绿色平价、红色高峰，指针为当前时刻"),
+    "aria-label": weT("今日计价时段：00:00 至 24:00，竖条为当前时刻，绿色平价、红色高峰"),
   },
-    React.createElement("span", { className: "we-billing-peak__bar" }, bars),
-    React.createElement("span", {
-      className: "we-billing-peak__needle",
-      ref: needleRef,
-      "aria-hidden": "true",
-    },
-      React.createElement("span", { className: "we-billing-peak__needle-icon" })),
+    React.createElement("span", { className: "we-billing-peak__tick" }, "00:00"),
+    React.createElement("div", { className: "we-billing-peak__track" },
+      React.createElement("span", { className: "we-billing-peak__band", "aria-hidden": "true" }),
+      /* 竖条在轨道内部定位：left 百分比直接对应轨道宽度，0% = 00:00，100% = 24:00。 */
+      /* 外层只负责位置；鲸鱼单独翻转；粒子与竖线在独立层，不随掉头镜像。 */
+      React.createElement("span", {
+        className: "we-billing-peak__needle",
+        ref: needleRef,
+        "aria-hidden": "true",
+      },
+        React.createElement("span", { className: "we-billing-peak__needle-icon", ref: iconRef }),
+        React.createElement("span", { className: "we-billing-peak__dots", ref: dotsRef })),
+    ),
+    React.createElement("span", { className: "we-billing-peak__tick we-billing-peak__tick--end" }, "24:00"),
   );
 
   return React.createElement("div", { className: "we-billing-peak" + (inPeakNow ? " we-billing-peak--peak" : "") },
     timeline,
     React.createElement("div", { className: "we-billing-peak__head" },
-      React.createElement("span", { className: "we-billing-peak__now", title: phase }, weT("当前")),
+      React.createElement("span", { className: "we-billing-peak__now", title: phase }, weT("当前：{phase}", { phase })),
       React.createElement("span", { className: "we-billing-peak__time" }, weT("剩余 {time}", { time: billingDuration(Math.max(0, nextAt - now)) })),
     ),
     /* 图例和「09:00 转高峰」并到同一行：左图例、右切换说明。 */
@@ -385,6 +477,33 @@ function BillingPeakStrip(props) {
       React.createElement("div", {
         className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
       }, switchText),
+    ),
+  );
+}
+
+/* 今日 AI 资讯：每 10 分钟拉一次，横向滚动。 */
+function AiNewsRow() {
+  const [items, setItems] = React.useState([]);
+  React.useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const json = await apiJson("/ai-news");
+        if (alive && Array.isArray(json.items)) setItems(json.items.slice(0, 12));
+      } catch {   }
+    };
+    load();
+    const timer = setInterval(load, 10 * 60 * 1000);
+    return () => { alive = false; clearInterval(timer); };
+  }, []);
+  const list = items.length ? items.concat(items) : [];
+  return React.createElement("div", { className: "we-billing-foot__news", title: weT("今日 AI 资讯（来源：Hacker News，每 10 分钟刷新）") },
+    React.createElement("span", { className: "we-billing-foot__news-label" }, weT("今日 AI")),
+    React.createElement("div", { className: "we-billing-foot__news-view" },
+      items.length
+        ? React.createElement("div", { className: "we-billing-foot__news-track" },
+          list.map((it, i) => React.createElement("span", { className: "we-billing-foot__news-item", key: "news-" + i }, it && it.title ? it.title : "")))
+        : React.createElement("span", { className: "we-billing-foot__news-item" }, weT("正在获取今日 AI 资讯…")),
     ),
   );
 }
@@ -535,11 +654,8 @@ function BillingSidebarFooter() {
   }
   const nodes = rows.slice();
   if (data && data.peak) nodes.push(React.createElement(BillingPeakStrip, { key: "peak", peak: data.peak }));
-  if (models.length > 0) {
-
-    nodes.push(React.createElement("div", { className: "we-billing-foot__models", key: "models" },
-      weT("{count} 模型", { count: String(models.length) })));
-  }
+  /* 「今日 AI」滚动条：数据来自 /wallpaper-engine/ai-news（服务端拉取并缓存）。 */
+  nodes.push(React.createElement(AiNewsRow, { key: "ai-news" }));
   return React.createElement("div", {
     className: "we-billing-foot",
     ref: cardRef,

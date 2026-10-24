@@ -432,13 +432,13 @@ check('H10 GET /billing/balance 200 + 形状（status/currency/total）',
 const balPost = fakeRes();
 await balanceRoutes[0].handler({ method: 'POST', url: '/wallpaper-engine/billing/balance' }, balPost);
 check('H11 余额路由只认 GET/HEAD（POST 405）', balPost.statusCode === 405);
-check('H12 客户端画了峰谷条 / 模型行 / 余额行（源码口径）',
+check('H12 客户端画了峰谷条 / 今日 AI 资讯行 / 余额行（源码口径）',
   layerSrc.includes('function BillingPeakStrip')
   && layerSrc.includes('we-billing-peak__timeline') && layerSrc.includes('we-billing-peak__needle')
-  && layerSrc.includes('we-billing-foot__models')
+  && layerSrc.includes('we-billing-foot__news')
   && layerSrc.includes('billingBalanceEnsure')
   && extCssSrc.includes('.we-billing-peak')
-  && extCssSrc.includes('.we-billing-foot__models'));
+  && extCssSrc.includes('.we-billing-foot__news'));
 section('G. 变异体负对照（同一段判据跑在改写过的源码上）');
 async function loadMutant (label, patch) {
   const source = readFileSync(join(ROOT, 'lib', 'billing.js'), 'utf8');
