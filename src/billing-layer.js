@@ -267,19 +267,19 @@ function BillingPeakStrip(props) {
       }
       clearParticles();
       /* 只发刚好填满竖线的那几颗，填完就停，不再撒一堆。 */
-      const waves = [[0, 1], [320, 1], [640, 1], [960, 1], [1280, 1]];
+      const waves = [[0, 1], [520, 1], [1040, 1], [1560, 1], [2080, 1]];
       for (let w = 0; w < waves.length; w += 1) {
         const delay = waves[w][0];
         const count = waves[w][1];
         for (let k = 0; k < count; k += 1) {
           const tid = window.setTimeout(() => {
             if (stopped || swimmingRef.current || !dotsEl) return;
-            const d0 = dist * (0.65 + Math.random() * 0.35);
-            /* 速度与出发距离成正比：远处 ~340px/s 冲过来，靠近竖条时降到 ~250px/s，
-               再叠 ease-out 让最后一段更慢（"远处快、近处缓"）。 */
-            const ratio = Math.min(1, Math.max(0, d0 / Math.max(1, dist)));
-            const speed = 80 + 260 * ratio;
-            const duration = Math.max(420, (d0 / speed) * 1000);
+            /* 每颗都从 00:00（左端）出发，滚到当前竖条：
+               距离越远给的飞行时间略长（0.9s → 1.8s），于是一段时间内跑得更快；
+               近处时间短、走得也慢，叠 ease-out 收尾。 */
+            const d0 = Math.max(0, dist);
+            const span = Math.max(1, trackW || dist);
+            const duration = 900 + 900 * Math.min(1, d0 / span);
             const jitter = (Math.random() - 0.5) * 6;
             const fly = document.createElement("i");
             fly.className = "we-billing-peak__particle";
@@ -514,13 +514,44 @@ function AiNewsRow() {
     const timer = setInterval(load, 10 * 60 * 1000);
     return () => { alive = false; clearInterval(timer); };
   }, []);
-  const list = items.length ? items.concat(items) : [];
+  /* 宿主返回的是对象数组（title/url/source/snippet/hot）；旧缓存里可能是纯字符串，一并兼容。 */
+  const norm = (raw) => {
+    if (typeof raw === "string") return { title: raw, url: "", source: "", snippet: "", hot: false };
+    const it = raw && typeof raw === "object" ? raw : {};
+    return {
+      title: typeof it.title === "string" ? it.title : "",
+      url: typeof it.url === "string" ? it.url : "",
+      source: typeof it.source === "string" ? it.source : "",
+      snippet: typeof it.snippet === "string" ? it.snippet : "",
+      hot: it.hot === true,
+    };
+  };
+  const rows = items.map(norm).filter((it) => it.title);
+  const anyHot = rows.some((it) => it.hot);
+  const list = rows.length ? rows.concat(rows) : [];
+  const tip = (it) => {
+    const where = it.source ? weT("来源：{source}", { source: it.source }) : "";
+    const extra = it.snippet && it.snippet !== it.title ? it.snippet : "";
+    return [it.title, where, extra, it.url ? weT("点击在新标签页打开来源") : ""].filter(Boolean).join("\n");
+  };
   return React.createElement("div", { className: "we-billing-foot__news", title: weT("热点（来源：AnySearch，每 10 分钟刷新）") },
-    React.createElement("span", { className: "we-billing-foot__news-label" }, weT("热点")),
+    React.createElement("span", {
+      className: "we-billing-foot__news-label" + (anyHot ? " we-billing-foot__news-label--hot" : ""),
+      title: anyHot ? weT("有高热话题") : weT("热点"),
+    }, weT("热点")),
     React.createElement("div", { className: "we-billing-foot__news-view" },
-      items.length
+      rows.length
         ? React.createElement("div", { className: "we-billing-foot__news-track" },
-          list.map((it, i) => React.createElement("span", { className: "we-billing-foot__news-item", key: "news-" + i }, it && it.title ? it.title : "")))
+          list.map((it, i) => (it.url
+            ? React.createElement("a", {
+              className: "we-billing-foot__news-item we-billing-foot__news-item--link",
+              key: "news-" + i,
+              href: it.url,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              title: tip(it),
+            }, it.title)
+            : React.createElement("span", { className: "we-billing-foot__news-item", key: "news-" + i, title: tip(it) }, it.title))))
         : React.createElement("span", { className: "we-billing-foot__news-item" }, weT("正在获取热点…")),
     ),
   );
