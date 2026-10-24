@@ -687,15 +687,28 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     display: inline-flex;
     gap: 28px;
     white-space: nowrap;
-    animation: we-news-scroll 46s linear infinite;
+    /* 96s ≈ 每条 8s：46s（每条 3.8s）中文标题读不完。 */
+    animation: we-news-scroll 96s linear infinite;
   }
   .we-billing-foot__news-item { flex: 0 0 auto; }
   @keyframes we-news-scroll {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
   }
+  /* 指针停在热点行上、或键盘焦点进入时暂停：想看清哪条就压住不动。 */
+  .we-billing-foot__news-view:hover .we-billing-foot__news-track,
+  .we-billing-foot__news-view:focus-within .we-billing-foot__news-track,
+  .we-billing-foot__news-view:active .we-billing-foot__news-track {
+    animation-play-state: paused;
+  }
+  /* 减少动态效果：不滚动，但后面的条目仍要能看 → 允许横向滚动（隐藏滚动条）。 */
   @media (prefers-reduced-motion: reduce) {
     .we-billing-foot__news-track { animation: none; }
+    .we-billing-foot__news-view {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .we-billing-foot__news-view::-webkit-scrollbar { display: none; }
   }
   .we-billing-foot__models {
     padding: 5px 8px;
