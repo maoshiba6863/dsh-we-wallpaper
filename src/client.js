@@ -3312,11 +3312,26 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
   min-width: 0;
   box-sizing: border-box;
 }
-/* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。
-   表格自己怎么滚由宿主的 _tableScroll 负责（它本来就是 max-width:100% + overflow-x:auto）。 */
+/* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。 */
 body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(table),
 body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(table) {
   width: 100%;
+}
+/* 表格永远按气泡宽度排：宿主给 th/td 写死了 min-width:100px，6 列的表在窄窗口下最小宽度
+   就超过气泡，于是表格顶出气泡、或者在宿主的 _tableScroll 里出现横向滚动条。
+   允许列压小 + 单元格换行，表格就永远收在气泡里（代价是列多的表会变高）。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] table,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table {
+  width: 100%;
+  max-width: 100%;
+}
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] table th,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] table td,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table th,
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table td {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
