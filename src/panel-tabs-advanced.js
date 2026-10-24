@@ -68,12 +68,21 @@
   }
 
   function renderBillingSection(ctx) {
-    const { onBillingEnabled, sel } = ctx;
+    const { onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, sel } = ctx;
+    const flipOn = sel.billingFlip !== false;
     return React.createElement("div", { className: "we-picker__section" },
       React.createElement("div", { className: "we-picker__section-head" },
         React.createElement("span", { className: "we-picker__section-label" }, weT("费用统计")),
       ),
       switchRow(weT("显示费用"), sel.billingEnabled !== false, (e) => onBillingEnabled(e.target.checked)),
+      switchRow(weT("翻转效果"), flipOn, (e) => onBillingFlip(e.target.checked), {
+        hint: weT("计费卡贴边时左右/上下翻转"),
+      }),
+      flipOn
+        ? React.createElement("div", { className: "we-picker__subrows" },
+          switchRow(weT("左右翻转"), sel.billingFlipX !== false, (e) => onBillingFlipX(e.target.checked)),
+          switchRow(weT("上下翻转"), sel.billingFlipY !== false, (e) => onBillingFlipY(e.target.checked)))
+        : null,
     );
   }
 

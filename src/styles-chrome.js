@@ -201,6 +201,12 @@ const CSS_CHROME = `    /* ── 统一控件 token：一套高度/圆角/墨�
   .we-picker__card-name {
     font-size: 15px; font-weight: 600; color: var(--dsw-alias-label-primary, inherit);
   }
+  /* 翻转开关的子项：缩进一级，挂在「翻转效果」下面。 */
+  .we-picker__subrows {
+    padding-left: 18px;
+    border-left: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.14));
+    margin-left: 2px;
+  }
   .we-picker__card-badge {
     font-size: 11px; font-weight: 500; color: var(--dsw-alias-label-secondary, #6b7280);
   }

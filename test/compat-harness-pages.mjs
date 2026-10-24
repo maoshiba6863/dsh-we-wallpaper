@@ -406,7 +406,7 @@ async function main() {
         };
       })()`);
     }
-    const SECTIONS = [['通用设置'], ['模型'], ['插件'], ['Agent 预设'], ['壁纸引擎', 'Wallpaper Engine']];
+    const SECTIONS = [['通用设置'], ['模型'], ['插件'], ['Agent 预设'], ['个性设置', '壁纸引擎', 'Wallpaper Engine']];
     const walk = [];
     for (const cands of SECTIONS) {
       const sec = cands[0];

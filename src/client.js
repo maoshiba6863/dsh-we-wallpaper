@@ -1813,6 +1813,28 @@ const onCaretColor = (hex, live) => {
 };
 
 const onBillingEnabled = (v) => { setSetting("billingEnabled", !!v); emit(); };
+const onBillingFlip = (v) => {
+  if (v) {
+    /* 总开关打开时恢复两个方向，避免出现「总开但全关」的死状态。 */
+    setSetting("billingFlip", true);
+    setSetting("billingFlipX", true);
+    setSetting("billingFlipY", true);
+  } else {
+    setSetting("billingFlip", false);
+  }
+  emit();
+};
+const onBillingFlipX = (v) => {
+  setSetting("billingFlipX", !!v);
+  /* 左右、上下都关闭时，总开关联动关闭并收起下级。 */
+  if (!v && selection.billingFlipY === false) setSetting("billingFlip", false);
+  emit();
+};
+const onBillingFlipY = (v) => {
+  setSetting("billingFlipY", !!v);
+  if (!v && selection.billingFlipX === false) setSetting("billingFlip", false);
+  emit();
+};
 const onGreetingOn = (v) => { setSetting("greetingOn", !!v); emit(); };
 const onGreetingPath = (v) => { setSetting("greetingPath", String(v || "")); emit(); };
 const onCoverOnStartup = (v) => {
@@ -3165,7 +3187,7 @@ function WallpaperPicker() {
 
       uiColorOpen: pickerUiColorOpen, onToggleUiColorSection: togglePickerUiColorSection,
       onToggleUiColorCustom, onUiColorElement,
-      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onCaretColor, onBillingEnabled, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
+      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
 
       onToggleChildIndependent, onGlassChildParam, childIndependentOn,
 
@@ -3190,7 +3212,7 @@ function WallpaperPicker() {
 
       renderGreetingSection({ onGreetingOn, onGreetingPath, onCoverOnStartup, sel }),
       renderSessionLayoutSection({ onChatLayout, sel }),
-      renderBillingSection({ onBillingEnabled, sel }),
+      renderBillingSection({ onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, sel }),
       renderAdvancedTab({
         setSetting, setTransient,
         onAdapterTarget, onEdgeCompatChange, onLayoutChange, onPauseOnBattery, onPauseOnBlur, onPauseOnHidden, sel,
@@ -3208,12 +3230,11 @@ function WallpaperPicker() {
   return React.createElement("div", { className: "we-picker", "data-we-cards": sel.pickerLayout, ref: pickerRootRef },
 
     React.createElement("div", { className: "we-picker__card-head" },
-      React.createElement("span", { className: "we-picker__card-name" }, weT("壁纸引擎")),
-      React.createElement("span", { className: "we-picker__card-badge" }, String(playableList.length)),
+      React.createElement("span", { className: "we-picker__card-name" }, weT("个性设置")),
       React.createElement("span", { className: "we-picker__card-desc" }, weT("本地 Wallpaper Engine 壁纸 · 液态玻璃主题")),
     ),
 
-    React.createElement("div", { className: "we-tabs", role: "tablist", "aria-label": weT("壁纸引擎设置分区") },
+    React.createElement("div", { className: "we-tabs", role: "tablist", "aria-label": weT("个性设置分区") },
       React.createElement("span", {
         className: "we-tabs__pill",
         "aria-hidden": "true",
@@ -3765,7 +3786,7 @@ function apply(ctx) {
   if (ctx.slots) {
     ctx.slots.inject("settings.section", () =>
       ctx.slots.register(
-        { name: "settings.section", id: "wallpaper-engine", order: 500, label: () => weT("壁纸引擎") },
+        { name: "settings.section", id: "wallpaper-engine", order: 500, label: () => weT("个性设置") },
         () => React.createElement(WallpaperPickerSection),
       ),
     );

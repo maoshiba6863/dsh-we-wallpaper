@@ -488,8 +488,9 @@ function AiNewsRow() {
     let alive = true;
     const load = async () => {
       try {
-        const json = await apiJson("/ai-news");
-        if (alive && Array.isArray(json.items)) setItems(json.items.slice(0, 12));
+        const res = await apiJson("/ai-news");
+        const list = res && res.data && Array.isArray(res.data.items) ? res.data.items : [];
+        if (alive && list.length) setItems(list.slice(0, 12));
       } catch {   }
     };
     load();
@@ -497,13 +498,13 @@ function AiNewsRow() {
     return () => { alive = false; clearInterval(timer); };
   }, []);
   const list = items.length ? items.concat(items) : [];
-  return React.createElement("div", { className: "we-billing-foot__news", title: weT("今日 AI 资讯（来源：Hacker News，每 10 分钟刷新）") },
-    React.createElement("span", { className: "we-billing-foot__news-label" }, weT("今日 AI")),
+  return React.createElement("div", { className: "we-billing-foot__news", title: weT("热点（来源：AnySearch，每 10 分钟刷新）") },
+    React.createElement("span", { className: "we-billing-foot__news-label" }, weT("热点")),
     React.createElement("div", { className: "we-billing-foot__news-view" },
       items.length
         ? React.createElement("div", { className: "we-billing-foot__news-track" },
           list.map((it, i) => React.createElement("span", { className: "we-billing-foot__news-item", key: "news-" + i }, it && it.title ? it.title : "")))
-        : React.createElement("span", { className: "we-billing-foot__news-item" }, weT("正在获取今日 AI 资讯…")),
+        : React.createElement("span", { className: "we-billing-foot__news-item" }, weT("正在获取热点…")),
     ),
   );
 }
@@ -536,6 +537,10 @@ function BillingSidebarFooter() {
     const compose = (rx, ry) => "perspective(720px) rotateX(" + rx + "deg) rotateY(" + ry + "deg)";
     const triggerFlip = (axis, dir) => {
       if (flipBusy || typeof el.animate !== "function") return;
+      if (selection.billingFlip === false) return;
+      /* billingFlipX = 左右翻转（rotateY）；billingFlipY = 上下翻转（rotateX）。 */
+      if (axis === "y" && selection.billingFlipX === false) return;
+      if (axis === "x" && selection.billingFlipY === false) return;
       const tx = Number(((0.5 - py) * 20).toFixed(2));
       const ty = Number(((px - 0.5) * 20).toFixed(2));
       const now = Date.now();
