@@ -3312,6 +3312,14 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
   min-width: 0;
   box-sizing: border-box;
 }
+/* 收起的步骤（宿主用 hidden=until-found / data-turn-process-hidden 折叠）不该画气泡：
+   那 12px 上下 padding 会把它们撑成 24px 高的小方块，看起来就是左侧孤立的一坨头像底色。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind][hidden],
+body[data-we-chat-layout="spread"] [data-chat-flow-kind][data-turn-process-hidden] {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
 /* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。 */
 body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(table),
 body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(table) {
