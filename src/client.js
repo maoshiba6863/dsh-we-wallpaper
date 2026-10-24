@@ -3337,6 +3337,14 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] table 
   white-space: normal;
   overflow-wrap: anywhere;
 }
+/* 宿主给「宽表格」的 _tableScroll 加了 margin-left:-140px（故意让表格向左溢出到侧栏 gutter）。
+   在气泡里这条必须归零：否则表格整体跑到气泡左边，再被 overflow:clip 裁掉左半截（列名看不见）。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"] [class*="tableScroll"],
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] [class*="tableScroll"] {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: 100% !important;
+}
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
 body[data-we-chat-layout="spread"] *:has(> [data-composer-card]) { width: 100% !important; max-width: 100% !important; }
