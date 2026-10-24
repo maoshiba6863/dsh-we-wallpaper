@@ -3297,9 +3297,11 @@ const CHAT_LAYOUT_CSS = `
 /* Conversation column: drop the width cap and centering. :has first; .icaHSq_column as fallback. */
 body[data-we-chat-layout="spread"] *:has(> [data-slot="conversation.chat.flow"]),
 body[data-we-chat-layout="spread"] .icaHSq_column { max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; }
-/* Assistant replies: left-aligned bubble (user messages keep the native right-side userRow). Node kind is assistant-step. */
-body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"],
-body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
+/* Assistant replies: left-aligned bubble (user messages keep the native right-side userRow). Node kind is assistant-step.
+   只给"真的有内容"的回复画气泡：正文必然落在 p/列表/代码/表格/图片上。宿主还有大量空的
+   步骤行（收起的过程、只有头像的行），给它们加 padding 会撑出小方块或一条满宽的浅色横条。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(:is(p, ul, ol, pre, table, blockquote, img)),
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(:is(p, ul, ol, pre, table, blockquote, img)) {
   background: var(--dsw-specific-bubble, rgba(127, 127, 127, 0.12));
   border-radius: var(--dsw-radius-xl, 14px);
   padding: 12px 16px;
@@ -3311,14 +3313,6 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
      注意别再给气泡加 overflow：那会把它变成滚动容器，压窄内容并在气泡边缘长出滚动条。 */
   min-width: 0;
   box-sizing: border-box;
-}
-/* 收起的步骤（宿主用 hidden=until-found / data-turn-process-hidden 折叠）不该画气泡：
-   那 12px 上下 padding 会把它们撑成 24px 高的小方块，看起来就是左侧孤立的一坨头像底色。 */
-body[data-we-chat-layout="spread"] [data-chat-flow-kind][hidden],
-body[data-we-chat-layout="spread"] [data-chat-flow-kind][data-turn-process-hidden] {
-  background: none;
-  padding: 0;
-  border-radius: 0;
 }
 /* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。 */
 body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(table),
