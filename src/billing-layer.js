@@ -250,7 +250,8 @@ function BillingPeakStrip(props) {
       if (dotsEl) { try { dotsEl.textContent = ""; } catch {   } }
       if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
     };
-    /* 停稳后 1 / 3 / 5 三批发射：离得近的更快；到达后堆成 10px 高的竖线。 */
+    /* 停稳后分五批发射：速度按「出发点到竖条的距离」给 —— 远的先快后慢追上来，
+       越靠近竖条越慢（ease-out 收尾），最后在竖条前汇成一列 10px 的点阵。 */
     const spawnParticles = () => {
       if (!dotsEl || typeof document === "undefined") return;
       const track = el.parentElement;
@@ -274,8 +275,11 @@ function BillingPeakStrip(props) {
           const tid = window.setTimeout(() => {
             if (stopped || swimmingRef.current || !dotsEl) return;
             const d0 = dist * (0.65 + Math.random() * 0.35);
-            const speed = 60 + 120 * (1 - d0 / Math.max(1, dist));
-            const duration = Math.max(600, (d0 / speed) * 1000);
+            /* 速度与出发距离成正比：远处 ~340px/s 冲过来，靠近竖条时降到 ~250px/s，
+               再叠 ease-out 让最后一段更慢（"远处快、近处缓"）。 */
+            const ratio = Math.min(1, Math.max(0, d0 / Math.max(1, dist)));
+            const speed = 80 + 260 * ratio;
+            const duration = Math.max(420, (d0 / speed) * 1000);
             const jitter = (Math.random() - 0.5) * 6;
             const fly = document.createElement("i");
             fly.className = "we-billing-peak__particle";
@@ -285,7 +289,7 @@ function BillingPeakStrip(props) {
               fa = fly.animate([
                 { transform: "translate(" + (-d0).toFixed(1) + "px," + jitter.toFixed(1) + "px)", opacity: 0.12, filter: "brightness(0.25)" },
                 { transform: "translate(0px,0px)", opacity: 1, filter: "brightness(1)" },
-              ], { duration, easing: "ease-in", fill: "forwards" });
+              ], { duration, easing: "ease-out", fill: "forwards" });
             } catch {   }
             const land = () => {
               try { if (fa) fa.cancel(); } catch {   }
