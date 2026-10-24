@@ -3309,10 +3309,12 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(:i
   max-width: 100%;
   margin-right: auto;
   /* 气泡是 flex 项，min-width 默认 auto（= min-content）会顶着 max-width 一起变大，
-     宽表格就把气泡撑到列外。min-width: 0 只允许它缩，不改宽度算法。
-     注意别再给气泡加 overflow：那会把它变成滚动容器，压窄内容并在气泡边缘长出滚动条。 */
+     宽表格就把气泡撑到列外。min-width: 0 只允许它缩，不改宽度算法。 */
   min-width: 0;
   box-sizing: border-box;
+  /* 兜底：气泡负责"所有内容都别跑出去"。overflow: clip 只裁切、不生成滚动容器，
+     不会像 auto 那样把气泡压窄或长出滚动条；表格的线条/边框再宽也只会被裁在圆角内。 */
+  overflow: clip;
 }
 /* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。 */
 body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(table),
