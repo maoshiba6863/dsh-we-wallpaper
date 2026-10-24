@@ -248,7 +248,6 @@ function BillingPeakStrip(props) {
       for (let i = 0; i < list.length; i += 1) { try { window.clearTimeout(list[i]); } catch {   } }
       particleTimers.current = [];
       if (dotsEl) { try { dotsEl.textContent = ""; } catch {   } }
-      if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
     };
     /* 停稳后分五批发射：速度按「出发点到竖条的距离」给 —— 远的先快后慢追上来，
        越靠近竖条越慢（ease-out 收尾），最后在竖条前汇成一列 10px 的点阵。 */
@@ -259,8 +258,7 @@ function BillingPeakStrip(props) {
       const dist = Math.max(0, (needlePctRef.current / 100) * trackW);
       /* 极端情况（00:00 附近）：没有飞行距离，直接显示竖线，避免标记消失。 */
       if (!(dist > 4)) {
-        if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
-        const line = document.createElement("i");
+          const line = document.createElement("i");
         line.className = "we-billing-peak__line";
         dotsEl.appendChild(line);
         return;
@@ -297,11 +295,6 @@ function BillingPeakStrip(props) {
               if (!dotsEl || stopped) return;
               const slot = SLOTS[dotCount.current % SLOTS.length];
               dotCount.current += 1;
-              if (trackEl) {
-                try {
-                  trackEl.style.setProperty("--we-fill", String(Math.min(1, dotCount.current / SLOTS.length)));
-                } catch {   }
-              }
               const solid = document.createElement("i");
               solid.className = "we-billing-peak__dot";
               solid.style.left = slot[0] + "px";

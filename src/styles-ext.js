@@ -354,6 +354,16 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
+    /* 卡片自带一套墨水色：它有自己的底（浅色主题白底、深色主题深底），
+       不能跟着「字体/配色」里的正文色走 —— 否则浅色主题 + 白色正文就是白字压白底。
+       文字一律纯黑 / 深色主题纯白：不搞灰阶"层次"，灰字压在浅底上就是看不清。
+       这里只覆盖本卡片子树的别名令牌，宿主的其它区域不受影响。 */
+    --we-billing-ink: #000;
+    --dsw-alias-label-primary: #000;
+    --dsw-alias-label-primary-dimmed: #000;
+    --dsw-alias-label-secondary: #000;
+    --dsw-alias-label-tertiary: #000;
+    --dsw-alias-label-caption: #000;
     border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.14));
     border-radius: 10px;
     background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
@@ -370,6 +380,22 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
       inset 0 -1px 0 rgba(0, 0, 0, 0.28),
       0 1px 2px rgba(0, 0, 0, 0.28),
       0 12px 28px -14px rgba(0, 0, 0, 0.6);
+  }
+  body[data-ds-dark-theme] .we-billing-foot {
+    --we-billing-ink: #fff;
+    --dsw-alias-label-primary: #fff;
+    --dsw-alias-label-primary-dimmed: #fff;
+    --dsw-alias-label-secondary: #fff;
+    --dsw-alias-label-tertiary: #fff;
+    --dsw-alias-label-caption: #fff;
+  }
+  /* 卡片里的文字统一用 --we-billing-ink（纯黑/纯白）；彩色只保留鲸鱼与图例色块。
+     用 (0,2,0) 的限定选择器盖掉零散的灰字声明；图例「平价 / 高峰」保留绿/红语义色。 */
+  .we-billing-foot :is(.we-billing-foot__row, .we-billing-foot__label, .we-billing-foot__amount,
+    .we-billing-foot__models, .we-billing-foot__news, .we-billing-foot__news-label, .we-billing-foot__news-item,
+    .we-billing-peak, .we-billing-peak__now, .we-billing-peak__time, .we-billing-peak__tick,
+    .we-billing-peak__meta) {
+    color: var(--we-billing-ink, #000);
   }
   /* 指针在卡片上时不加缓动，跟手；离开后回弹走上面的 320ms。 */
   .we-billing-foot:hover,
@@ -515,8 +541,8 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     left: 0;
     top: 0;
     bottom: 0;
-    /* 光带宽度 = 当前时刻位置 × 填充进度（粒子每落一颗推进一档）。 */
-    width: calc(var(--we-now-pct, 0%) * var(--we-fill, 1));
+    /* 光带只跟当前时刻，不再由粒子推进（粒子只负责落点堆竖线）。 */
+    width: var(--we-now-pct, 0%);
     transition: width 350ms linear;
     background: linear-gradient(90deg,
       color-mix(in srgb, var(--we-peak-color) 2%, transparent),
@@ -525,7 +551,7 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   .we-billing-peak__band::after {
     content: "";
     position: absolute;
-    left: calc(var(--we-now-pct, 0%) * var(--we-fill, 1));
+    left: var(--we-now-pct, 0%);
     right: 0;
     top: 0;
     bottom: 0;
@@ -697,11 +723,25 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     min-width: 0;
     padding: 4px 8px 5px;
     border-top: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.14));
-    font-size: 11px;
+    /* 与「今日」行同字号：11px 在侧栏里太碎。 */
+    font-size: 12px;
     color: var(--dsw-alias-label-tertiary, #8b95a7);
     overflow: hidden;
   }
   .we-billing-foot__news-label { flex: 0 0 auto; }
+  /* 「热点」二字：亮红；命中高热话题时轻微呼吸（不改变整行宽度，只动透明度）。 */
+  .we-billing-foot .we-billing-foot__news-label { color: #ff3b30; font-weight: 600; }
+  .we-billing-foot .we-billing-foot__news-label--hot { animation: we-news-label-breathe 2.4s ease-in-out infinite; }
+  @keyframes we-news-label-breathe {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .we-billing-foot .we-billing-foot__news-label--hot { animation: none; opacity: 1; }
+  }
+  /* 条目可点：整条是一个新标签页链接，悬停才出下划线（滚动中不闪）。 */
+  .we-billing-foot__news-item--link { color: inherit; text-decoration: none; cursor: pointer; }
+  .we-billing-foot__news-item--link:hover { text-decoration: underline; }
   .we-billing-foot__news-view { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; }
   .we-billing-foot__news-track {
     display: inline-flex;
