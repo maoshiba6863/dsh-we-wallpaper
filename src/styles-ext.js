@@ -390,11 +390,11 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     --dsw-alias-label-caption: #fff;
   }
   /* 卡片里的文字统一用 --we-billing-ink（纯黑/纯白）；彩色只保留鲸鱼与图例色块。
-     用 (0,2,0) 的限定选择器盖掉图例/转高峰提示等零散的颜色声明。 */
+     用 (0,2,0) 的限定选择器盖掉零散的灰字声明；图例「平价 / 高峰」保留绿/红语义色。 */
   .we-billing-foot :is(.we-billing-foot__row, .we-billing-foot__label, .we-billing-foot__amount,
     .we-billing-foot__models, .we-billing-foot__news, .we-billing-foot__news-label, .we-billing-foot__news-item,
     .we-billing-peak, .we-billing-peak__now, .we-billing-peak__time, .we-billing-peak__tick,
-    .we-billing-peak__meta, .we-billing-peak__key) {
+    .we-billing-peak__meta) {
     color: var(--we-billing-ink, #000);
   }
   /* 指针在卡片上时不加缓动，跟手；离开后回弹走上面的 320ms。 */
