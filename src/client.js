@@ -1813,9 +1813,28 @@ const onCaretColor = (hex, live) => {
 };
 
 const onBillingEnabled = (v) => { setSetting("billingEnabled", !!v); emit(); };
-const onBillingFlip = (v) => { setSetting("billingFlip", !!v); emit(); };
-const onBillingFlipX = (v) => { setSetting("billingFlipX", !!v); emit(); };
-const onBillingFlipY = (v) => { setSetting("billingFlipY", !!v); emit(); };
+const onBillingFlip = (v) => {
+  if (v) {
+    /* 总开关打开时恢复两个方向，避免出现「总开但全关」的死状态。 */
+    setSetting("billingFlip", true);
+    setSetting("billingFlipX", true);
+    setSetting("billingFlipY", true);
+  } else {
+    setSetting("billingFlip", false);
+  }
+  emit();
+};
+const onBillingFlipX = (v) => {
+  setSetting("billingFlipX", !!v);
+  /* 左右、上下都关闭时，总开关联动关闭并收起下级。 */
+  if (!v && selection.billingFlipY === false) setSetting("billingFlip", false);
+  emit();
+};
+const onBillingFlipY = (v) => {
+  setSetting("billingFlipY", !!v);
+  if (!v && selection.billingFlipX === false) setSetting("billingFlip", false);
+  emit();
+};
 const onGreetingOn = (v) => { setSetting("greetingOn", !!v); emit(); };
 const onGreetingPath = (v) => { setSetting("greetingPath", String(v || "")); emit(); };
 const onCoverOnStartup = (v) => {
