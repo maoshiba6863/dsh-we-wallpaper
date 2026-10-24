@@ -340,13 +340,12 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
      两个出口都只画一行小字：侧栏底部「今日 ≈¥x · 本会话 ≈¥y」、每轮回复底部
      「本轮 ≈¥x」。金额用等宽数字（tabular-nums），刷新时宽度不跳；颜色走宿主的
      标签令牌，深浅两套主题自动跟随。宿主不可达时组件不渲染，这里不准备错误态。 */
-  /* 侧栏底部卡片：逐条照抄 dsh-cost-meter 1.9.7 的 simple 模式口径 ——
-     · .cm-footer-stack.simple → 容器：gap:0 · border:1px solid var(--dsw-alias-border-l1)
-       · border-radius:10px · background:var(--dsw-alias-bg-layer-1) · overflow 裁角
-     · .cm-simple-summary     → 行：flex · space-between · gap:8px · padding:5px 8px
+  /* 侧栏底部卡片（本插件自研样式）：
+     · 容器：gap:0 · border:1px solid var(--dsw-alias-border-l1) · border-radius:10px
+       · background:var(--dsw-alias-bg-layer-1) · overflow 裁角
+     · 行：flex · space-between · gap:8px · padding:5px 8px
        · 12px/600 · border-bottom:1px solid var(--dsw-alias-border-l1)
-     · .cm-num                → 金额等宽数字
-     （原文见 1.9.7 src/client/01-open-styles-i18n.js 的 354/369 两条与 .cm-foot 那条） */
+     · 金额：等宽数字（tabular-nums），刷新时宽度不跳 */
   .we-billing-foot {
     display: flex;
     flex-direction: column;
@@ -693,7 +692,7 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   .we-billing-peak__meta--soon {
     color: var(--we-peak-high, #ff5f5f);
   }
-  /* 模型汇总行：对照 1.9.7 简单模式底部的「今日 ¥x · N 模型」。 */
+  /* 汇总行：一行显示「今日 ¥x · N 模型」，与金额行同字号。 */
   .we-billing-foot__news {
     display: flex;
     align-items: center;
