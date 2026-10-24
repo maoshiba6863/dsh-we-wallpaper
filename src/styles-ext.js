@@ -569,7 +569,7 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     height: 17px;
     color: var(--we-peak-low, #4ade80);
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
-    /* 鲸鱼只负责指示当前位置：不做上下浮动（早先的 idle-bob 被当成呼吸，已移除），
+    /* 这里只放"壳"：位置、尺寸、颜色、投影。浮动挂在里面的 .we-whale 上（更轻的那版），
        也不摆尾——旋转会让整条鱼看起来像在原地掉头。 */
   }
   .we-billing-peak--peak .we-billing-peak__needle-icon { color: var(--we-peak-high, #ff5f5f); }
@@ -579,6 +579,14 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     height: 100%;
     /* 描边会画到 viewBox 外，放开裁切 */
     overflow: visible;
+    /* 停靠时轻微上下浮动（0.8px / 2.4s，比原来 1.5px / 1.8s 轻一半，不再像呼吸）。
+       游动中由下面的 [data-we-swim] 关掉，避免边游边跳。 */
+    animation: we-whale-idle-bob 2.4s ease-in-out infinite;
+  }
+  .we-billing-peak__needle[data-we-swim="1"] .we-whale { animation: none; }
+  @keyframes we-whale-idle-bob {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -0.8px; }
   }
   .we-billing-peak__needle-icon path {
     fill: currentColor;
@@ -587,11 +595,12 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     stroke-linejoin: round;
     stroke-linecap: round;
   }
-  /* 减少动态效果：粒子与光点也不呼吸。
+  /* 减少动态效果：鲸鱼的浮动、粒子与光点都不再动。
      原先这里的选择器列表末尾多了一个逗号再跟 @media，整块规则被 CSS 丢弃（从未生效），
-     现在拆开写：鲸鱼无动画，光点在此覆盖为静态。 */
+     现在拆开写：鲸鱼/光点在此覆盖为静态。 */
   @media (prefers-reduced-motion: reduce) {
     .we-billing-peak__needle-icon,
+    .we-billing-peak__needle-icon .we-whale,
     .we-billing-peak__dot { animation: none; }
   }
   .we-billing-peak__dots {
