@@ -534,31 +534,9 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     border-radius: 2px;
     overflow: hidden;
     pointer-events: none;
-  }
-  .we-billing-peak__band::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    /* 光带只跟当前时刻，不再由粒子推进（粒子只负责落点堆竖线）。 */
-    width: var(--we-now-pct, 0%);
-    transition: width 350ms linear;
-    background: linear-gradient(90deg,
-      color-mix(in srgb, var(--we-peak-color) 2%, transparent),
-      color-mix(in srgb, var(--we-peak-color) 55%, transparent));
-  }
-  .we-billing-peak__band::after {
-    content: "";
-    position: absolute;
-    left: var(--we-now-pct, 0%);
-    right: 0;
-    top: 0;
-    bottom: 0;
-    transition: left 350ms linear;
-    background: linear-gradient(90deg,
-      color-mix(in srgb, var(--we-peak-color) 18%, transparent),
-      color-mix(in srgb, var(--we-peak-color) 10%, rgba(110, 166, 224, 0.10)));
+    /* 整条光带是中性的：不再有「已过去」的绿色/红色填充段。
+       currentColor 取卡片墨水色（浅色主题黑、深色主题白），只当灰阶底色用。 */
+    background: color-mix(in srgb, currentColor 12%, transparent);
   }
   .we-billing-peak__tick {
     flex: 0 0 auto;
