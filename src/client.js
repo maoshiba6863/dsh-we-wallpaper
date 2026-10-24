@@ -3306,6 +3306,13 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
   width: fit-content;
   max-width: 100%;
   margin-right: auto;
+  /* width: fit-content 只把气泡本身卡在 max-width；里面的宽表格 / 宽代码块仍按 min-content
+     撑出去，于是文字和表格边框会画到气泡外面。让气泡自己成为横向滚动容器：
+     min-width: 0 允许它收缩，overflow-x: auto 把超宽内容收进气泡里滚。
+     注意 overflow 两轴不能只写一个：另一轴写 visible 会被计算成 auto（会多出竖向滚动条）。 */
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
