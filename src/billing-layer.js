@@ -248,9 +248,9 @@ function BillingPeakStrip(props) {
       for (let i = 0; i < list.length; i += 1) { try { window.clearTimeout(list[i]); } catch {   } }
       particleTimers.current = [];
       if (dotsEl) { try { dotsEl.textContent = ""; } catch {   } }
-      if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
     };
-    /* 停稳后 1 / 3 / 5 三批发射：离得近的更快；到达后堆成 10px 高的竖线。 */
+    /* 停稳后分五批发射：速度按「出发点到竖条的距离」给 —— 远的先快后慢追上来，
+       越靠近竖条越慢（ease-out 收尾），最后在竖条前汇成一列 10px 的点阵。 */
     const spawnParticles = () => {
       if (!dotsEl || typeof document === "undefined") return;
       const track = el.parentElement;
@@ -258,24 +258,26 @@ function BillingPeakStrip(props) {
       const dist = Math.max(0, (needlePctRef.current / 100) * trackW);
       /* 极端情况（00:00 附近）：没有飞行距离，直接显示竖线，避免标记消失。 */
       if (!(dist > 4)) {
-        if (trackEl) { try { trackEl.style.setProperty("--we-fill", "1"); } catch {   } }
-        const line = document.createElement("i");
+          const line = document.createElement("i");
         line.className = "we-billing-peak__line";
         dotsEl.appendChild(line);
         return;
       }
       clearParticles();
       /* 只发刚好填满竖线的那几颗，填完就停，不再撒一堆。 */
-      const waves = [[0, 1], [320, 1], [640, 1], [960, 1], [1280, 1]];
+      const waves = [[0, 1], [520, 1], [1040, 1], [1560, 1], [2080, 1]];
       for (let w = 0; w < waves.length; w += 1) {
         const delay = waves[w][0];
         const count = waves[w][1];
         for (let k = 0; k < count; k += 1) {
           const tid = window.setTimeout(() => {
             if (stopped || swimmingRef.current || !dotsEl) return;
-            const d0 = dist * (0.65 + Math.random() * 0.35);
-            const speed = 60 + 120 * (1 - d0 / Math.max(1, dist));
-            const duration = Math.max(600, (d0 / speed) * 1000);
+            /* 每颗都从 00:00（左端）出发，滚到当前竖条：
+               距离越远给的飞行时间略长（0.9s → 1.8s），于是一段时间内跑得更快；
+               近处时间短、走得也慢，叠 ease-out 收尾。 */
+            const d0 = Math.max(0, dist);
+            const span = Math.max(1, trackW || dist);
+            const duration = 900 + 900 * Math.min(1, d0 / span);
             const jitter = (Math.random() - 0.5) * 6;
             const fly = document.createElement("i");
             fly.className = "we-billing-peak__particle";
@@ -285,7 +287,7 @@ function BillingPeakStrip(props) {
               fa = fly.animate([
                 { transform: "translate(" + (-d0).toFixed(1) + "px," + jitter.toFixed(1) + "px)", opacity: 0.12, filter: "brightness(0.25)" },
                 { transform: "translate(0px,0px)", opacity: 1, filter: "brightness(1)" },
-              ], { duration, easing: "ease-in", fill: "forwards" });
+              ], { duration, easing: "ease-out", fill: "forwards" });
             } catch {   }
             const land = () => {
               try { if (fa) fa.cancel(); } catch {   }
@@ -293,11 +295,6 @@ function BillingPeakStrip(props) {
               if (!dotsEl || stopped) return;
               const slot = SLOTS[dotCount.current % SLOTS.length];
               dotCount.current += 1;
-              if (trackEl) {
-                try {
-                  trackEl.style.setProperty("--we-fill", String(Math.min(1, dotCount.current / SLOTS.length)));
-                } catch {   }
-              }
               const solid = document.createElement("i");
               solid.className = "we-billing-peak__dot";
               solid.style.left = slot[0] + "px";
@@ -413,7 +410,7 @@ function BillingPeakStrip(props) {
   const progress = Math.max(0, Math.min(100, ((now - prevAt) / Math.max(1, nextAt - prevAt)) * 100));
   const crossed = now >= nextAt;
   const inPeakNow = crossed ? !(peak.inPeak === true) : peak.inPeak === true;
-  const phase = inPeakNow ? weT("高峰") : peak.holiday ? weT("假日 · 谷价") : peak.weekend ? weT("周末 · 谷价") : weT("平价");
+  const phase = inPeakNow ? weT("高峰") : peak.holiday ? weT("假日 · 平价") : peak.weekend ? weT("周末 · 平价") : weT("平价");
   const nextPhase = inPeakNow ? weT("转平价") : weT("转高峰");
   /** 距下一次转高峰不足 60 秒：切换说明提前变红，提示马上进入高峰价。 */
   const peakSoon = !crossed && !inPeakNow && nextAt - now > 0 && nextAt - now <= 60000;
@@ -510,13 +507,46 @@ function AiNewsRow() {
     const timer = setInterval(load, 10 * 60 * 1000);
     return () => { alive = false; clearInterval(timer); };
   }, []);
-  const list = items.length ? items.concat(items) : [];
+  /* 宿主返回的是对象数组（title/url/source/snippet/hot）；旧缓存里可能是纯字符串，一并兼容。 */
+  const norm = (raw) => {
+    if (typeof raw === "string") return { title: raw, url: "", source: "", snippet: "", hot: false };
+    const it = raw && typeof raw === "object" ? raw : {};
+    return {
+      title: typeof it.title === "string" ? it.title : "",
+      url: typeof it.url === "string" ? it.url : "",
+      source: typeof it.source === "string" ? it.source : "",
+      snippet: typeof it.snippet === "string" ? it.snippet : "",
+      hot: it.hot === true,
+      dead: it.dead === true,
+    };
+  };
+  const rows = items.map(norm).filter((it) => it.title);
+  const anyHot = rows.some((it) => it.hot);
+  const list = rows.length ? rows.concat(rows) : [];
+  const tip = (it) => {
+    const where = it.source ? weT("来源：{source}", { source: it.source }) : "";
+    const extra = it.snippet && it.snippet !== it.title ? it.snippet : "";
+    const tail = it.dead ? weT("来源当前无法访问（连不上）") : (it.url ? weT("点击在新标签页打开来源") : "");
+    return [it.title, where, extra, tail].filter(Boolean).join("\n");
+  };
   return React.createElement("div", { className: "we-billing-foot__news", title: weT("热点（来源：AnySearch，每 10 分钟刷新）") },
-    React.createElement("span", { className: "we-billing-foot__news-label" }, weT("热点")),
+    React.createElement("span", {
+      className: "we-billing-foot__news-label" + (anyHot ? " we-billing-foot__news-label--hot" : ""),
+      title: anyHot ? weT("有高热话题") : weT("热点"),
+    }, weT("热点")),
     React.createElement("div", { className: "we-billing-foot__news-view" },
-      items.length
+      rows.length
         ? React.createElement("div", { className: "we-billing-foot__news-track" },
-          list.map((it, i) => React.createElement("span", { className: "we-billing-foot__news-item", key: "news-" + i }, it && it.title ? it.title : "")))
+          list.map((it, i) => (it.url && !it.dead
+            ? React.createElement("a", {
+              className: "we-billing-foot__news-item we-billing-foot__news-item--link",
+              key: "news-" + i,
+              href: it.url,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              title: tip(it),
+            }, it.title)
+            : React.createElement("span", { className: "we-billing-foot__news-item", key: "news-" + i, title: tip(it) }, it.title))))
         : React.createElement("span", { className: "we-billing-foot__news-item" }, weT("正在获取热点…")),
     ),
   );
