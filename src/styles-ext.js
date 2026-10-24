@@ -683,6 +683,30 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   .we-billing-turn--low { --we-billing-target-color: #4ade80; }
   .we-billing-turn--peak { --we-billing-target-color: #ff5f5f; }
 
+  /* 宿主聊天的宽表格：宽窗口下宿主的 .md-table-wide 用 cqw 外扩 + 负 margin 回拉，
+     父宽度对不上时会整体右移并被窗口裁掉。这里收回到消息列内，超宽改为列内横向滚动。 */
+  .md-table-wide,
+  [class*="md-table-wide"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: auto !important;
+  }
+  /* 宽屏自适应：≥1500px 时让表格向两侧各借一点留白，最多到窗口减去 120px；
+     仍然居中、不越出窗口；窄屏保持列内滚动。 */
+  @media (min-width: 1500px) {
+    .md-table-wide,
+    [class*="md-table-wide"] {
+      width: min(calc(100% + 280px), calc(100vw - 120px)) !important;
+      max-width: none !important;
+      margin-left: calc(50% - min(calc(100% + 280px), calc(100vw - 120px)) / 2) !important;
+      margin-right: 0 !important;
+    }
+  }
+
 `;
 
 export { CSS_EXT };
