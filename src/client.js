@@ -3306,13 +3306,17 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] {
   width: fit-content;
   max-width: 100%;
   margin-right: auto;
-  /* width: fit-content 只把气泡本身卡在 max-width；里面的宽表格 / 宽代码块仍按 min-content
-     撑出去，于是文字和表格边框会画到气泡外面。让气泡自己成为横向滚动容器：
-     min-width: 0 允许它收缩，overflow-x: auto 把超宽内容收进气泡里滚。
-     注意 overflow 两轴不能只写一个：另一轴写 visible 会被计算成 auto（会多出竖向滚动条）。 */
+  /* 气泡是 flex 项，min-width 默认 auto（= min-content）会顶着 max-width 一起变大，
+     宽表格就把气泡撑到列外。min-width: 0 只允许它缩，不改宽度算法。
+     注意别再给气泡加 overflow：那会把它变成滚动容器，压窄内容并在气泡边缘长出滚动条。 */
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  box-sizing: border-box;
+}
+/* 带表格的消息用满列宽：内容本来就要占地方，别缩在左边留一大片空。
+   表格自己怎么滚由宿主的 _tableScroll 负责（它本来就是 max-width:100% + overflow-x:auto）。 */
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant"]:has(table),
+body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"]:has(table) {
+  width: 100%;
 }
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
