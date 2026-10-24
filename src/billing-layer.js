@@ -536,6 +536,10 @@ function BillingSidebarFooter() {
     const compose = (rx, ry) => "perspective(720px) rotateX(" + rx + "deg) rotateY(" + ry + "deg)";
     const triggerFlip = (axis, dir) => {
       if (flipBusy || typeof el.animate !== "function") return;
+      if (selection.billingFlip === false) return;
+      /* billingFlipX = 左右翻转（rotateY）；billingFlipY = 上下翻转（rotateX）。 */
+      if (axis === "y" && selection.billingFlipX === false) return;
+      if (axis === "x" && selection.billingFlipY === false) return;
       const tx = Number(((0.5 - py) * 20).toFixed(2));
       const ty = Number(((px - 0.5) * 20).toFixed(2));
       const now = Date.now();

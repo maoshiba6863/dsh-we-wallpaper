@@ -123,7 +123,7 @@ function installSidebarRight(ctx) {
           kind: WE_SIDEBAR_KIND,
           keepMounted: true,
           title: () => weT("壁纸"),
-          /* 空态右栏的引导列表里不再放「壁纸引擎」入口（用户口径：这边不需要）。
+          /* 空态右栏的引导列表里不再放「个性设置」入口（用户口径：这边不需要）。
              面板仍然从自己的页签进入；guide 传空数组，不占那三格默认入口。 */
           guide: [],
         });
@@ -273,7 +273,7 @@ function openSettingsSection(tabId) {
     let rows;
     try { rows = document.body.querySelectorAll("nav button"); } catch { return false; }
 
-    const want = weT("壁纸引擎");
+    const want = weT("个性设置");
     for (const btn of rows) {
       if ((btn.textContent || "").trim() === want) {
         try { btn.click(); return true; } catch { return false; }

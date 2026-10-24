@@ -610,9 +610,9 @@
           title: weT("在设置页打开「播放」页签 —— 出图来源 / 实时帧 / 帧率上限在那里"),
         }
         : {
-          label: weT("壁纸引擎设置 ›"),
+          label: weT("个性设置 ›"),
           target: "",
-          title: weT("打开设置对话框的「壁纸引擎」分区（外观 / 播放 / 系统与全部配置）"),
+          title: weT("打开设置对话框的「个性设置」分区（外观 / 播放 / 系统与全部配置）"),
         };
 
     return React.createElement("div", { className: "we-qp we-qp--" + dock },
