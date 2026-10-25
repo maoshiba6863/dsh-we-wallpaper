@@ -14,6 +14,8 @@ on:
 
 permissions:
   contents: write
+  # Trusted Publishing（OIDC）：npm 用它确认发布来自本仓库的这个工作流，无需 NPM_TOKEN
+  id-token: write
 
 jobs:
   release:
@@ -23,7 +25,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Trusted Publishing 需要 npm >= 11.5.1（Node 22 自带 10.x，下面单独升级）
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - name: 升级 npm（Trusted Publishing 需要 >= 11.5.1）
+        run: npm install -g npm@latest
 
       # 构建脚本只用 Node 内置模块，不需要 npm install
       - name: 打包（prepack 会构建 lib/client.js）
@@ -37,6 +44,10 @@ jobs:
           tar -tzf "$TGZ" | grep -qx "package/lib/client.js"
           tar -tzf "$TGZ" | grep -qx "package/lib/index.js"
           tar -tzf "$TGZ" | grep -qx "package/package.json"
+
+      # Trusted Publishing：npm 通过 OIDC 校验「仓库 + 工作流文件名」，不需要任何 token
+      - name: 发布到 npm
+        run: npm publish --provenance --access public
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2
