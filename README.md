@@ -103,10 +103,10 @@
 
 ### 方式一：从 Releases 安装（推荐）
 
-每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面已经包含构建好的 `lib/client.js`，不需要你自己编译。
+每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面已经包含构建好的 `lib/client.js`，不需要你自己编译。当前最新版本：**v1.1.8**。
 
 ```bash
-dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/download/v1.0.0/dsh-we-wallpaper-1.0.0.tgz
+dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/download/v1.1.8/dsh-we-wallpaper-1.1.8.tgz
 ```
 
 桌面端也可以在插件管理里选「添加插件」，粘贴上面这个地址。
