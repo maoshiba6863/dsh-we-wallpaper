@@ -14,6 +14,33 @@
 
 ---
 
+## 收录信息
+
+| 项 | 值 |
+|---|---|
+| 许可证 | MIT（保留原作者版权声明，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)） |
+| 支持的 profile | `desktop`（桌面端）、`web`（浏览器） |
+| 环境要求 | DSH ≥ 0.1.5-rc.1，Node ≥ 18 |
+| 平台 | Windows / macOS / Linux（部分能力按平台降级，见「平台差异」） |
+| 外部服务 | AnySearch（AI 热点，可选）、Hacker News（兜底）。只有出站请求，不上传任何用户数据 |
+| 本机权限 | 只读扫描 Wallpaper Engine / Steam 壁纸库；macOS 首次覆盖桌面需要一次性「辅助功能 / 自动化」授权 |
+| 数据存放 | `~/.dsh-wallpaper-engine`（设置、缓存、上传、账单），不同步到任何服务器 |
+| 安装 | `dsh plugin add <Release 里的 tgz 地址>`，见下方「安装」 |
+
+---
+
+## 界面预览
+
+设置页里的「个性设置」分区（壁纸库 / 外观 / 播放 / 系统 / 扩展 五个页签）：
+
+| 壁纸库 | 外观与字体 |
+|---|---|
+| ![壁纸库](docs/screenshots/settings-wallpaper.png) | ![外观与字体](docs/screenshots/settings-appearance.png) |
+
+> 截图取自本机运行中的插件，路径与壁纸名已做脱敏处理。
+
+---
+
 ## 它到底能干什么
 
 一句话：**让 DSH 的聊天界面变成"玻璃面板 + 会动的壁纸"**，同时尽量不耗电、不卡、不打扰。
