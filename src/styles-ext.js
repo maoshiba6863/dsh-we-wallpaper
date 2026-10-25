@@ -709,9 +709,11 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   /* 「热点」二字：亮红；命中高热话题时轻微呼吸（不改变整行宽度，只动透明度）。 */
   .we-billing-foot .we-billing-foot__news-label { color: #ff3b30; font-weight: 600; }
   .we-billing-foot .we-billing-foot__news-label--hot { animation: we-news-label-breathe 2.4s ease-in-out infinite; }
+  /* 呼吸用「文字颜色」而不是 opacity：opacity 动画会让 Chrome 把整行提升成独立合成层，
+     和卡片的 3D / backdrop 上下文叠在一起时会把这一行再画一遍，出现错位重影。 */
   @keyframes we-news-label-breathe {
-    0%, 100% { opacity: 0.55; }
-    50% { opacity: 1; }
+    0%, 100% { color: #ff3b30; }
+    50% { color: #ff9a90; }
   }
   @media (prefers-reduced-motion: reduce) {
     .we-billing-foot .we-billing-foot__news-label--hot { animation: none; opacity: 1; }
