@@ -400,13 +400,25 @@ const CSS_BASE = `
      push the whole gray ramp darker while a wallpaper is active. Primary text
      is already near-black; we still pin it to pure black for max legibility.
      (Dark mode is untouched: its white-on-dark text already reads fine.) */
+  /* 浅色主题的墨色下限：不只有壁纸时才需要，玻璃面本身就比宿主原生白底更亮/更花。
+     整条灰阶压深一档，同时把插件的 --we-ink-2/3 接到同一套值上。 */
+  body[data-we-glass-page]:not([data-ds-dark-theme]),
   body[data-we-wallpaper]:not([data-ds-dark-theme]) {
     --dsw-alias-label-primary: rgb(0, 0, 0);
     --dsw-alias-label-primary-dimmed: rgb(10, 10, 12);
-    --dsw-alias-label-secondary: rgb(40, 42, 46);
-    --dsw-alias-label-tertiary: rgb(70, 73, 79);
-    --dsw-alias-label-caption: rgb(110, 114, 120);
-    --dsw-alias-label-dimmed: rgb(50, 52, 56);
+    --dsw-alias-label-secondary: rgb(31, 35, 40);
+    --dsw-alias-label-tertiary: rgb(58, 63, 71);
+    --dsw-alias-label-caption: rgb(74, 79, 87);
+    --dsw-alias-label-dimmed: rgb(42, 46, 52);
+    --we-ink-2: rgb(31, 35, 40);
+    --we-ink-3: rgb(58, 63, 71);
+  }
+  /* 设置窗是玻璃面，浅色主题下再单独钉一次，避免某些宿主子面自带的灰阶把它冲淡。 */
+  body:not([data-ds-dark-theme]) [role="dialog"]:has([data-slot="settings.section"]) {
+    --dsw-alias-label-primary: rgb(0, 0, 0);
+    --dsw-alias-label-secondary: rgb(31, 35, 40);
+    --dsw-alias-label-tertiary: rgb(58, 63, 71);
+    --dsw-alias-label-caption: rgb(74, 79, 87);
   }
 
   /* ── 全局 UI 配色：把宿主界面里那几处「蓝色元素」接进调色板 ────────────────────
