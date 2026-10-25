@@ -128,9 +128,17 @@
 1. 已经装好 DSH（桌面端或命令行均可）
 2. 想用本机壁纸的话，先装好 Wallpaper Engine 并订阅壁纸（只在 Windows 上能装；其它系统可以自己上传图片/视频，或把壁纸文件放到本机后用 `DSH_WE_STEAM_ROOT` 指向壁纸库）
 
-### 方式一：从 Releases 安装（推荐）
+### 方式一：从 npm 安装（推荐）
 
-每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面已经包含构建好的 `lib/client.js`，不需要你自己编译。当前最新版本：**v1.1.8**。
+```bash
+dsh plugin add dsh-we-wallpaper
+```
+
+npm 包里已经包含构建好的 `lib/client.js`，不需要自己编译；桌面端也可以在插件管理里搜 `dsh-we-wallpaper` 安装。
+
+### 方式二：从 Releases 安装（离线 / 指定版本）
+
+每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面同样包含构建好的 `lib/client.js`。当前最新版本：**v1.1.8**。
 
 ```bash
 dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/download/v1.1.8/dsh-we-wallpaper-1.1.8.tgz
@@ -138,9 +146,7 @@ dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/downloa
 
 桌面端也可以在插件管理里选「添加插件」，粘贴上面这个地址。
 
-> npm 暂不提供：这个包没有发布到 npm registry，请用 Releases 的 tgz。
-
-### 方式二：用本仓库源码
+### 方式三：用本仓库源码
 
 直接克隆仓库的人要先构建一次（`lib/client.js` 是构建产物，不在仓库里）：
 
