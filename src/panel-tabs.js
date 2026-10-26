@@ -65,7 +65,7 @@
     return React.createElement(React.Fragment, null,
       React.createElement("div", { className: "we-picker__section" },
         React.createElement("div", { className: "we-picker__section-head" },
-          React.createElement("span", { className: "we-picker__section-label" }, weT("画面")),
+          React.createElement("span", { className: "we-picker__section-label" }, weT("背景画面调整")),
         ),
         renderEffectsSlidersSection(ctx),
         renderEffectsLiveSection(ctx),
