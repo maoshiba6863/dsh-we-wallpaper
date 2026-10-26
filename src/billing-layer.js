@@ -331,38 +331,8 @@ function BillingPeakStrip(props) {
         resolve();
       };
     });
-    /* 按时间条的分段变速：红段维持 12s/整条，绿段提速一倍（6s/整条）。 */
-    const isPeakAt = (pct) => {
-      const list = segsRef.current;
-      for (let i = 0; i < list.length; i += 1) {
-        const seg = list[i];
-        if (pct >= seg.a && pct <= seg.b) return seg.peak;
-      }
-      return false;
-    };
-    const glideSmart = async (from, to) => {
-      const dir = to >= from ? 1 : -1;
-      const cuts = [from, to];
-      const list = segsRef.current;
-      for (let i = 0; i < list.length; i += 1) {
-        const seg = list[i];
-        const bounds = [seg.a, seg.b];
-        for (let j = 0; j < bounds.length; j += 1) {
-          const b = bounds[j];
-          if ((b - from) * dir > 0.01 && (to - b) * dir > 0.01) cuts.push(b);
-        }
-      }
-      cuts.sort((x, y) => (dir === 1 ? x - y : y - x));
-      for (let i = 0; i < cuts.length - 1; i += 1) {
-        if (stopped) return;
-        const a = cuts[i];
-        const b = cuts[i + 1];
-        const peak = isPeakAt((a + b) / 2);
-        const width = Math.abs(b - a) / 100;
-        const dur = Math.max(140, width * (peak ? 12000 : 6000));
-        await glide(a, b, dur);
-      }
-    };
+    /* 匀速游动：整条时间轴固定 6s，不再按峰谷时段变速（红段原来 12s/整条，慢一倍）。 */
+    const glideSmart = (from, to) => glide(from, to, Math.max(140, Math.abs(to - from) * 60));
     const setSwimming = (on) => {
       try {
         if (on) el.dataset.weSwim = "1";
