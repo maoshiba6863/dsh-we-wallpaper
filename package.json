@@ -1,6 +1,6 @@
 {
   "name": "dsh-we-wallpaper",
-  "version": "1.1.9",
+  "version": "2.0.0",
   "description": "把本机 Wallpaper Engine 壁纸放到 DSH 界面背后：场景/视频/网页/图片四类壁纸，液态玻璃外观、音频可视化、遮挡省电、费用显示。",
   "type": "module",
   "engines": {
