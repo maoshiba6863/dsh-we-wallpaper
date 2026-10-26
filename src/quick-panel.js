@@ -109,14 +109,14 @@
   const QP_TABS = [
     { id: "wallpaper", get label() { return weT("壁纸"); } },
     { id: "appearance", get label() { return weT("外观"); } },
-    { id: "playback", get label() { return weT("播放"); } },
   ];
 
   const QP_TAB_KEY = "dsh-wallpaper-engine:qp-tab";
 
   function readQpTab() {
     try {
-      const v = localStorage.getItem(QP_TAB_KEY);
+      let v = localStorage.getItem(QP_TAB_KEY);
+      if (v === "playback") v = "wallpaper";
       if (v && QP_TABS.some((t) => t.id === v)) return v;
     } catch {   }
     return "wallpaper";
@@ -378,24 +378,6 @@
     }));
   }
 
-  function qpRenderPlaybackPane(sel, switchQpTab) {
-    return React.createElement(React.Fragment, null,
-        renderEffectsTab(sidebarRenderCtx({
-          setSetting, sel,
-          onScrim, onWallpaperBlur, onWallpaperOpacity,
-          onBackgroundBrightness, onBackgroundContrast, onBackgroundSaturate,
-
-          onLayerPositionX, onLayerPositionY, onLayerScale, onLayerReset,
-
-          onToggleSceneLive, onLiveBootDelay, onSceneLiveFps, onPlaybackRate, onObjectFit, onFlip,
-          onOpenPicker, setPickerOpener,
-
-          onPickWallpaper: () => switchQpTab("wallpaper"),
-        })),
-        renderAudioTab(sidebarRenderCtx({ sel, onToggleAudio, onVideoVolume })),
-      );
-  }
-
   function qpRenderViewBar(sel, view, typeFilter, ratingFilter, switchView) {
     return React.createElement("div", { className: "we-qp__viewbar" },
       React.createElement("input", {
@@ -603,16 +585,10 @@
         target: "appearance",
         title: weT("在设置页打开「外观」页签 —— 玻璃预设与全部外观配置在那里"),
       }
-      : qpTab === "playback"
-        ? {
-          label: weT("更多播放设置 ›"),
-          target: "playback",
-          title: weT("在设置页打开「播放」页签 —— 出图来源 / 实时帧 / 帧率上限在那里"),
-        }
-        : {
+      : {
           label: weT("个性设置 ›"),
           target: "",
-          title: weT("打开设置对话框的「个性设置」分区（外观 / 播放 / 系统与全部配置）"),
+          title: weT("打开设置对话框的「个性设置」分区（外观 / 系统与全部配置）"),
         };
 
     return React.createElement("div", { className: "we-qp we-qp--" + dock },
@@ -634,12 +610,22 @@
             cornersOpen, onToggleCornersSection: toggleCornersSection,
 
           })
-          : qpTab === "playback"
-            ? qpRenderPlaybackPane(sel, switchQpTab)
-            : null),
+          : null),
         !(qpTab === "wallpaper" && userPropsPanelOpen() && propsAvailable) && qpTab === "wallpaper" && React.createElement(React.Fragment, null,
 
                 qpRenderLibrarySection(sel, view, typeFilter, ratingFilter, listRef, rows, cardsView, vTopH, vBtmH, q, switchView),
+
+                sel.id && React.createElement("div", { className: "we-qp__section" },
+                  renderEffectsTab(sidebarRenderCtx({
+                    setSetting, sel,
+                    onScrim, onWallpaperBlur, onWallpaperOpacity,
+                    onBackgroundBrightness, onBackgroundContrast, onBackgroundSaturate,
+                    onLayerPositionX, onLayerPositionY, onLayerScale, onLayerReset,
+                    onToggleSceneLive, onLiveBootDelay, onSceneLiveFps, onPlaybackRate, onObjectFit, onFlip,
+                    onOpenPicker, setPickerOpener,
+                    onPickWallpaper: () => switchQpTab("wallpaper"),
+                  })),
+                ),
 
                 React.createElement("div", { className: "we-qp__section" },
                   renderAudioTab(sidebarRenderCtx({ sel, onToggleAudio, onVideoVolume })),

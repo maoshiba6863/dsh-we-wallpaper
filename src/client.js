@@ -1353,14 +1353,13 @@ const PICKER_TAB_KEY = "dsh-wallpaper-engine:picker-tab";
 const PICKER_TABS = [
   { id: "library", get label() { return weT("壁纸库"); } },
   { id: "appearance", get label() { return weT("外观"); } },
-  { id: "playback", get label() { return weT("播放"); } },
   { id: "system", get label() { return weT("系统"); } },
   { id: "extensions", get label() { return weT("扩展"); } },
 ];
 
 const PICKER_TAB_LEGACY = {
-  wallpaper: "library", font: "appearance", effects: "playback",
-  audio: "playback", advanced: "system", about: "library",
+  wallpaper: "library", font: "appearance", effects: "library",
+  audio: "library", playback: "library", advanced: "system", about: "library",
 };
 function readSavedPickerTab() {
   try {
@@ -3198,16 +3197,6 @@ function WallpaperPicker() {
       onResetModule,
       presetsOpen: pickerPresetsOpen, onTogglePresetsSection: togglePickerPresetsSection,
     });
-    if (activeTab === "playback") return React.createElement(React.Fragment, null,
-      renderEffectsTab({
-        setSetting, setTransient,
-        onBackgroundBrightness, onBackgroundContrast, onBackgroundSaturate, onClearCustomFrame, onClearGpuFrame, onCustomFrameFile, onFlip, onFpsCap, onLayerPositionX, onLayerPositionY, onLayerReset, onLayerScale, onLiveBootDelay, onObjectFit, onOpenPicker, onPlaybackRate, onRecaptureGpuFrame, onRefreshFrame, onSceneLiveFps, onScrim, onToggleSceneLive, onWallpaperBlur, onWallpaperOpacity, sel, setPickerOpener,
-      }),
-      renderAudioTab({
-        setSetting, setTransient,
-        onToggleAudio, onVideoVolume, sel,
-      }),
-    );
     if (activeTab === "system") return React.createElement(React.Fragment, null,
 
       renderGreetingSection({ onGreetingOn, onGreetingPath, onCoverOnStartup, sel }),
@@ -3220,10 +3209,22 @@ function WallpaperPicker() {
         onCacheDirBrowseInput, onCacheDirBrowseGo, onCacheDirBrowseEnter, onCacheDirBrowseUp, onPickCacheDir, onCloseCacheDirBrowse,
       }),
     );
-    return renderWallpaperTab({
+    const wallpaperPane = renderWallpaperTab({
       setSetting, setTransient,
       INTERVALS, armedConfirm: sel.armedConfirm, cdMode, current, editing, editorPageView, group, groups, isLiveScene, onArmConfirm: armConfirm, onArmDeleteGroup, onCancelEditUploadDir, onCancelEditWeAssetsDir, onClear, onDeleteGroup, onDisarmConfirm: disarmConfirm, onEditInterval, onEditName, onEditOrder, onGroupChange, onGroupInterval, onOpenPicker, onOpenPickerDraft, onRefresh, onStartEditUploadDir, onStartEditWeAssetsDir, onSwitchTransition, onSwitchTransitionDir, onSwitchTransitionSpeed, onToggleAudio, onTogglePlay, onTogglePropsPanel, onToggleRotation, onUploadDirDraft, onWeAssetsDirDraft, pagerRow, playableCount, playableList, playbackLive, propsPanelOpen, renderUserPropsPanel, sel, setPickerOpener, uploadedList,
     });
+    /* 播放参数并入「壁纸库」；启动动画在「系统」页签，是独立路由，跟这里无关。 */
+    return React.createElement(React.Fragment, null,
+      wallpaperPane,
+      sel.id ? renderEffectsTab({
+        setSetting, setTransient,
+        onBackgroundBrightness, onBackgroundContrast, onBackgroundSaturate, onClearCustomFrame, onClearGpuFrame, onCustomFrameFile, onFlip, onFpsCap, onLayerPositionX, onLayerPositionY, onLayerReset, onLayerScale, onLiveBootDelay, onObjectFit, onOpenPicker, onPlaybackRate, onRecaptureGpuFrame, onRefreshFrame, onSceneLiveFps, onScrim, onToggleSceneLive, onWallpaperBlur, onWallpaperOpacity, sel, setPickerOpener,
+      }) : null,
+      sel.id ? renderAudioTab({
+        setSetting, setTransient,
+        onToggleAudio, onVideoVolume, sel,
+      }) : null,
+    );
   };
   const tabIdx = Math.max(0, PICKER_TABS.findIndex((t) => t.id === activeTab));
 
