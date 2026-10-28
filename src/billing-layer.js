@@ -265,7 +265,7 @@ function BillingPeakStrip(props) {
       }
       clearParticles();
       /* 只发刚好填满竖线的那几颗，填完就停，不再撒一堆。 */
-      const waves = [[0, 1], [520, 1], [1040, 1], [1560, 1], [2080, 1]];
+      const waves = [[0, 1], [650, 1], [1300, 1], [1950, 1], [2600, 1]];
       for (let w = 0; w < waves.length; w += 1) {
         const delay = waves[w][0];
         const count = waves[w][1];
@@ -277,7 +277,7 @@ function BillingPeakStrip(props) {
                近处时间短、走得也慢，叠 ease-out 收尾。 */
             const d0 = Math.max(0, dist);
             const span = Math.max(1, trackW || dist);
-            const duration = 900 + 900 * Math.min(1, d0 / span);
+            const duration = 1800 + 1200 * Math.min(1, d0 / span);
             const jitter = (Math.random() - 0.5) * 6;
             const fly = document.createElement("i");
             fly.className = "we-billing-peak__particle";
@@ -285,12 +285,14 @@ function BillingPeakStrip(props) {
             let fa = null;
             try {
               fa = fly.animate([
-                { transform: "translate(" + (-d0).toFixed(1) + "px," + jitter.toFixed(1) + "px)", opacity: 0.12, filter: "brightness(0.25)" },
+                /* 起飞时就清晰可见：从 00:00 一出来就能看到这颗粒子 */
+                { transform: "translate(" + (-d0).toFixed(1) + "px," + jitter.toFixed(1) + "px)", opacity: 0.85, filter: "brightness(0.75)" },
                 { transform: "translate(0px,0px)", opacity: 1, filter: "brightness(1)" },
               ], { duration, easing: "ease-out", fill: "forwards" });
             } catch {   }
             const land = () => {
               try { if (fa) fa.cancel(); } catch {   }
+              if (!fly.isConnected) return;
               try { fly.remove(); } catch {   }
               if (!dotsEl || stopped) return;
               const slot = SLOTS[dotCount.current % SLOTS.length];
@@ -301,12 +303,20 @@ function BillingPeakStrip(props) {
               solid.style.top = slot[1] + "px";
               solid.style.animationDelay = (dotCount.current * 130) + "ms";
               dotsEl.appendChild(solid);
-              /* 填满后收成一条完整竖线，只保留呼吸。 */
+              /* 第 5 颗落地后，按固定间距重建这 5 颗：
+                 不依赖每颗自己的落点误差，保证一定是鲸鱼正下方的一条竖线。 */
               if (dotCount.current >= SLOTS.length) {
                 try { dotsEl.textContent = ""; } catch {   }
-                const line = document.createElement("i");
-                line.className = "we-billing-peak__line";
-                dotsEl.appendChild(line);
+                for (let i = 0; i < SLOTS.length; i += 1) {
+                  const dot = document.createElement("i");
+                  dot.className = "we-billing-peak__dot";
+                  /* 5 颗独立的 2x2 粒子，竖直对齐成一列；
+                     各自错开 110ms 呼吸，所以是"一颗一颗"在闪，不是整条一起闪 */
+                  dot.style.left = SLOTS[i][0] + "px";
+                  dot.style.top = SLOTS[i][1] + "px";
+                  dot.style.animationDelay = (i * 110) + "ms";
+                  dotsEl.appendChild(dot);
+                }
               }
             };
             if (fa) fa.onfinish = land; else window.setTimeout(land, duration);
@@ -315,6 +325,28 @@ function BillingPeakStrip(props) {
         }
       }
     };
+    /* 呼吸结束后：一粒一粒朝 24:00 方向滑出去，边滑边淡出 */
+    const flyAwayDots = () => new Promise((resolve) => {
+      if (!dotsEl) { resolve(); return; }
+      const track = el.parentElement;
+      const trackW = track ? track.clientWidth : 0;
+      const toRight = Math.max(40, trackW * (1 - needlePctRef.current / 100));
+      const kids = Array.prototype.slice.call(dotsEl.children)
+        .sort((a, b) => parseFloat(a.style.top || 0) - parseFloat(b.style.top || 0));
+      const STEP = 300, DUR = 2400;
+      kids.forEach((k, i) => {
+        window.setTimeout(() => {
+          try {
+            const a = k.animate([
+              { transform: "translate(0px,0px)", opacity: 1 },
+              { transform: "translate(" + toRight.toFixed(0) + "px," + ((Math.random() - 0.5) * 6).toFixed(1) + "px)", opacity: 0 },
+            ], { duration: DUR, easing: "ease-out", fill: "forwards" });
+            a.onfinish = () => { try { k.remove(); } catch {   } };
+          } catch {   }
+        }, i * STEP);
+      });
+      window.setTimeout(() => { try { dotsEl.textContent = ""; } catch {   } resolve(); }, kids.length * STEP + DUR + 60);
+    });
     const wait = (ms) => new Promise((resolve) => {
       timer = window.setTimeout(resolve, ms);
     });
@@ -344,9 +376,21 @@ function BillingPeakStrip(props) {
       while (!stopped) {
         swimmingRef.current = false;             // 停靠：位置跟真实时间
         setSwimming(false);                      // 停靠：上下浮动
-        spawnParticles();                        // 停稳后粒子逐批撞向鲸鱼
-        await wait(Math.min(5, round) * 60000);
-        round = round >= 5 ? 1 : round + 1;
+        /* 停靠总时长：第 1 轮 1 分钟、第 2 轮 2 分钟 */
+        const restUntil = Date.now() + Math.min(2, round) * 60000;
+        /* 停靠期间约 19 秒一轮：
+           粒子从 00:00 飞到鲸鱼正下方排成竖线 → 呼吸 10 秒 → 朝 24:00 滑走 → 再来 */
+        while (!stopped && Date.now() < restUntil) {
+          clearParticles();
+          spawnParticles();
+          await wait(5600);                      // 等 5 颗全部落地成型
+          if (stopped || Date.now() >= restUntil) break;
+          await wait(10000);                     // 竖线呼吸 10 秒
+          if (stopped || Date.now() >= restUntil) break;
+          await flyAwayDots();
+          await wait(300);
+        }
+        round = round >= 2 ? 1 : round + 1;
         if (stopped) break;
         clearParticles();                        // 游动：清掉粒子与竖线
         swimmingRef.current = true;              // 游动：动画接管位置
