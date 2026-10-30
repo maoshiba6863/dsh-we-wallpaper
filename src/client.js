@@ -3349,6 +3349,15 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] [class
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
 body[data-we-chat-layout="spread"] *:has(> [data-composer-card]) { width: 100% !important; max-width: 100% !important; }
+/* 新会话（空对话）的输入框还套在一两层居中容器里，上面那条只放宽了直接父级，
+   更外层的 max-width 仍然把它夹在中间。这里把它的祖父/曾祖父层也放开。 */
+body[data-we-chat-layout="spread"] :has(> :has(> [data-composer-card])),
+body[data-we-chat-layout="spread"] :has(> :has(> :has([data-composer-card]))) {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
 body[data-we-chat-layout="spread"] [data-composer-card] {
   /* 20px on each side, aligned with the left edge; auto keeps it off a single edge. */
   max-width: calc(100% - 40px) !important;
