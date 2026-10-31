@@ -3349,6 +3349,14 @@ body[data-we-chat-layout="spread"] [data-chat-flow-kind="assistant-step"] [class
 /* Bottom composer: DSH already pins it absolute to the bottom; width follows the mode.
    Spread = full available width; center = narrow column comparable to the message column. */
 body[data-we-chat-layout="spread"] *:has(> [data-composer-card]) { width: 100% !important; max-width: 100% !important; }
+/* 空会话（新会话首页）的输入框：宿主把 composerStack 压到 909px 居中，
+   卡片再被自身 max-width: 876.8px 夹一层 —— 两处都要放开，输入框才会铺满。
+   用 [class*="composerStack"] 而不是 :has() 祖先选择器：后者会命中大范围容器，
+   在桌面端实测把应用搞崩过。 */
+body[data-we-chat-layout="spread"] [class*="composerStack"] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
 body[data-we-chat-layout="spread"] [data-composer-card] {
   /* 20px on each side, aligned with the left edge; auto keeps it off a single edge. */
   max-width: calc(100% - 40px) !important;
