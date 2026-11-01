@@ -163,6 +163,11 @@ const INLINE_MODULES = [
     markers: ['function renderAppearanceGlassSection(ctx) {', 'renderGlassPresetsBlock(ctx.glassPresets)'],
   },
   {
+    file: 'src/char-sprites.js',
+    why: '计费卡片里的角色精灵条（行走 / 站立 / 蹲下 / 转圈 / 举手）：一整条 webp 的 data URI，运行时按帧裁切绘制',
+    markers: ['const CHAR_SPRITES = ', 'data:image/webp;base64,'],
+  },
+  {
     file: 'src/billing-layer.js',
     why: '计费界面出口：sidebar.footer.action（今日/本会话）+ conversation.chat.turnTail（本轮 ≈¥）；共享缓存与 5s 轮询',
     markers: ['const BILLING_POLL_MS = ', 'function useBilling(', 'function BillingSidebarFooter(',

@@ -1834,6 +1834,7 @@ const onBillingFlipY = (v) => {
   if (!v && selection.billingFlipX === false) setSetting("billingFlip", false);
   emit();
 };
+const onBillingMascot = (v) => { setSetting("billingMascot", v === "whale" ? "whale" : "girl"); emit(); };
 const onGreetingOn = (v) => { setSetting("greetingOn", !!v); emit(); };
 const onGreetingPath = (v) => { setSetting("greetingPath", String(v || "")); emit(); };
 const onCoverOnStartup = (v) => {
@@ -3186,7 +3187,7 @@ function WallpaperPicker() {
 
       uiColorOpen: pickerUiColorOpen, onToggleUiColorSection: togglePickerUiColorSection,
       onToggleUiColorCustom, onUiColorElement,
-      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
+      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
 
       onToggleChildIndependent, onGlassChildParam, childIndependentOn,
 
@@ -3201,7 +3202,7 @@ function WallpaperPicker() {
 
       renderGreetingSection({ onGreetingOn, onGreetingPath, onCoverOnStartup, sel }),
       renderSessionLayoutSection({ onChatLayout, sel }),
-      renderBillingSection({ onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, sel }),
+      renderBillingSection({ onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, sel }),
       renderAdvancedTab({
         setSetting, setTransient,
         onAdapterTarget, onEdgeCompatChange, onLayoutChange, onPauseOnBattery, onPauseOnBlur, onPauseOnHidden, sel,

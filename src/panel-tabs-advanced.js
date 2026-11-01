@@ -48,40 +48,49 @@
       React.createElement("div", { className: "we-picker__section-head" },
         React.createElement("span", { className: "we-picker__section-label" }, weT("会话布局")),
       ),
-      React.createElement("div", { className: "we-picker__ctl" },
-        React.createElement("div", {
-          className: "we-picker__seg we-picker__seg--joined",
-          role: "group",
-          "aria-label": weT("会话布局"),
-        },
-          [["center", weT("居中")], ["spread", weT("铺开")]].map(([id, label]) =>
-            React.createElement("button", {
-              key: id,
-              type: "button",
-              className: "we-picker__rate" + (current === id ? " we-picker__rate--active" : ""),
-              "aria-pressed": current === id,
-              onClick: () => onChatLayout(id),
-            }, label)),
-        ),
-      ),
+      /* 和「游走动画」同样的折叠结构：标题行显示当前值，展开后两个子项 */
+      React.createElement("details", { className: "we-picker__fold" },
+        React.createElement("summary", { className: "we-picker__ctl" },
+          ctlText(weT("布局方式")),
+          React.createElement("span", { className: "we-picker__fold-value" },
+            current === "spread" ? weT("铺开") : weT("居中"))),
+        React.createElement("div", { className: "we-picker__subrows" },
+          switchRow(weT("居中"), current === "center", () => onChatLayout("center"), { key: "layout-center" }),
+          switchRow(weT("铺开"), current === "spread", () => onChatLayout("spread"), { key: "layout-spread" }))),
     );
   }
 
   function renderBillingSection(ctx) {
-    const { onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, sel } = ctx;
+    const { onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, sel } = ctx;
+    const mascot = sel.billingMascot === "whale" ? "whale" : "girl";
     const flipOn = sel.billingFlip !== false;
     return React.createElement("div", { className: "we-picker__section" },
-      React.createElement("div", { className: "we-picker__section-head" },
-        React.createElement("span", { className: "we-picker__section-label" }, weT("费用统计")),
-      ),
-      switchRow(weT("显示费用"), sel.billingEnabled !== false, (e) => onBillingEnabled(e.target.checked)),
-      switchRow(weT("翻转效果"), flipOn, (e) => onBillingFlip(e.target.checked), {
-        hint: weT("计费卡贴边时左右/上下翻转"),
-      }),
-      flipOn
+      switchRow(weT("计费卡片"), sel.billingEnabled !== false, (e) => onBillingEnabled(e.target.checked)),
+      /* 「卡片转转」和「计费跳跳」都归到「计费卡片」下面当子级 */
+      sel.billingEnabled !== false
         ? React.createElement("div", { className: "we-picker__subrows" },
-          switchRow(weT("左右翻转"), sel.billingFlipX !== false, (e) => onBillingFlipX(e.target.checked)),
-          switchRow(weT("上下翻转"), sel.billingFlipY !== false, (e) => onBillingFlipY(e.target.checked)))
+          switchRow(weT("卡片能翻"), flipOn, (e) => onBillingFlip(e.target.checked), {
+            hint: weT("计费卡贴边时左右/上下翻转"),
+          }),
+          flipOn
+            ? React.createElement("div", { className: "we-picker__subrows" },
+              switchRow(weT("左右翻"), sel.billingFlipX !== false, (e) => onBillingFlipX(e.target.checked)),
+              switchRow(weT("上下翻"), sel.billingFlipY !== false, (e) => onBillingFlipY(e.target.checked)))
+            : null,
+          React.createElement("details", { className: "we-picker__fold" },
+            React.createElement("summary", { className: "we-picker__ctl" },
+              ctlText(weT("蓝鲸聚时")),
+              React.createElement("span", { className: "we-picker__fold-value" },
+                mascot === "whale" ? weT("线条鱼") : weT("大肥鱼"))),
+            React.createElement("div", { className: "we-picker__subrows" },
+              switchRow(weT("线条鱼"), mascot === "whale", () => onBillingMascot("whale"), {
+                key: "mascot-whale",
+                hint: weT("原来的鲸鱼线稿 + 七彩粒子"),
+              }),
+              switchRow(weT("大肥鱼"), mascot === "girl", () => onBillingMascot("girl"), {
+                key: "mascot-girl",
+                hint: weT("角色精灵：走动与随机小动作"),
+              }))))
         : null,
     );
   }

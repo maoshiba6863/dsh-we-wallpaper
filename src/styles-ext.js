@@ -481,7 +481,8 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   .we-billing-peak__footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    /* 图例去掉后只剩「周一 09:00 转高峰」，保持在右侧 */
+    justify-content: flex-end;
     gap: 10px;
     min-width: 0;
   }
@@ -508,6 +509,8 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   }
   .we-billing-peak__key--low { color: var(--we-peak-low); }
   .we-billing-peak__key--peak { color: var(--we-peak-high); }
+  /* 时间轴整条去掉：不再画刻度、不再显示 00:00 / 24:00；
+     轨道元素保留（高度 0、不可见），只用来给角色定位。 */
   .we-billing-peak__timeline {
     position: relative;
     display: flex;
@@ -533,9 +536,32 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
     border-radius: 2px;
     overflow: hidden;
     pointer-events: none;
-    /* 整条光带是中性的：不再有「已过去」的绿色/红色填充段。
-       currentColor 取卡片墨水色（浅色主题黑、深色主题白），只当灰阶底色用。 */
-    background: color-mix(in srgb, currentColor 12%, transparent);
+    /* 两种外观都不画灰条：时间轴只剩两端刻度 */
+    background: transparent;
+  }
+  .we-billing-peak:not(.we-billing-peak--girl) .we-billing-peak__footer {
+    justify-content: space-between;
+  }
+  /* 游走动画：分段控件收窄、靠右，和开关列对齐 */
+  .we-picker__seg.we-mascot-seg {
+    flex: 0 0 auto;
+    width: 168px;
+  }
+  .we-picker__seg.we-mascot-seg .we-picker__rate {
+    padding: 4px 0;
+    font-size: 12px;
+    text-align: center;
+  }
+  /* 游走动画折叠行 */
+  .we-picker__fold > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .we-picker__fold > summary::-webkit-details-marker { display: none; }
+  .we-picker__fold-value {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.6;
   }
   .we-billing-peak__tick {
     flex: 0 0 auto;
@@ -576,6 +602,54 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
        也不摆尾——旋转会让整条鱼看起来像在原地掉头。 */
   }
   .we-billing-peak--peak .we-billing-peak__needle-icon { color: var(--we-peak-high, #ff5f5f); }
+
+  /* 角色精灵（替代鲸鱼）：56×74 CSS，画布 2 倍分辨率；浮在时间条上方 */
+  /* 今日 + 余额 合并行：左余额、右今日 */
+  .we-billing-foot__row--merged {
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .we-billing-foot__pair {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
+  }
+  /* 角色站立区：在时间条上方留出 76px，避免压住上面的余额/今日行 */
+  .we-billing-peak--girl {
+    /* 角色区 = 角色高 62 + 头顶留 6px，避免压到「今日」行 */
+    padding-top: 68px;
+    gap: 2px;
+    padding-bottom: 2px;
+  }
+  .we-billing-peak--girl .we-billing-peak__timeline {
+    padding-top: 0;
+  }
+  .we-billing-peak--girl .we-billing-peak__head {
+    line-height: 13px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .we-billing-peak__needle-icon:has(.we-char) {
+    width: 64px;
+    height: 62px;
+    margin-left: -28px;
+    bottom: calc(100% + 3px);
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
+  }
+  .we-billing-peak__needle-icon .we-char {
+    display: block;
+    width: 64px;
+    height: 62px;
+    margin-top: 0;
+    animation: we-char-bob 2.6s ease-in-out infinite;
+  }
+  .we-billing-peak__needle[data-we-swim="1"] .we-char { animation: none; }
+  @keyframes we-char-bob {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -0.8px; }
+  }
   .we-billing-peak__needle-icon .we-whale {
     display: block;
     width: 100%;
