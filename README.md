@@ -4,7 +4,7 @@
 
 - 维护者：[@maoshiba6863](https://github.com/maoshiba6863)
 - 许可：MIT
-- 支持系统：Windows / macOS / Linux
+- 支持系统：Windows / macOS / Linux（桌面端）、浏览器（web 端）
 - 宿主要求：DSH ≥ 0.1.5-rc.1，Node ≥ 18
 
 > 本仓库是在两个开源项目基础上合并改写的版本：
@@ -19,13 +19,15 @@
 | 项 | 值 |
 |---|---|
 | 许可证 | MIT（保留原作者版权声明，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)） |
+| 插件市场 | 已收录，市场内名称「壁纸引擎」 |
+| npm | [`dsh-we-wallpaper`](https://www.npmjs.com/package/dsh-we-wallpaper)（当前 latest 2.1.0） |
 | 支持的 profile | `desktop`（桌面端）、`web`（浏览器） |
 | 环境要求 | DSH ≥ 0.1.5-rc.1，Node ≥ 18 |
 | 平台 | Windows / macOS / Linux（部分能力按平台降级，见「平台差异」） |
 | 外部服务 | AnySearch（AI 热点，可选）、Hacker News（兜底）。只有出站请求，不上传任何用户数据 |
 | 本机权限 | 只读扫描 Wallpaper Engine / Steam 壁纸库；macOS 首次覆盖桌面需要一次性「辅助功能 / 自动化」授权 |
 | 数据存放 | `~/.dsh-wallpaper-engine`（设置、缓存、上传、账单），不同步到任何服务器 |
-| 安装 | `dsh plugin add <Release 里的 tgz 地址>`，见下方「安装」 |
+| 安装 | `dsh plugin add dsh-we-wallpaper`（npm / 插件市场）；离线可用 Release 里的 tgz |
 
 ---
 
@@ -36,6 +38,15 @@
 | 壁纸库 | 外观与字体 |
 |---|---|
 | ![壁纸库](docs/screenshots/settings-wallpaper.png) | ![外观与字体](docs/screenshots/settings-appearance.png) |
+
+侧栏左下角的**计费卡片**，两种外观（设置里的「蓝鲸聚时」切换）：
+
+| 线条鱼（七彩粒子标记当前时刻） | 大肥鱼（角色动画 + 随机小动作） |
+|---|---|
+| ![计费卡片·线条鱼](docs/screenshots/billing-card-whale.png) | ![计费卡片·大肥鱼](docs/screenshots/billing-card-girl.png) |
+
+- 线条鱼：七彩粒子从 00:00 飞入、排成竖线、呼吸后逐粒飞走，到端点会掉头
+- 大肥鱼：沿时间轴走动，到端点随机蹲下 / 举手 / 转圈，当前时刻同样用七彩粒子标记
 
 > 截图取自本机运行中的插件，路径与壁纸名已做脱敏处理。
 
@@ -128,7 +139,11 @@
 1. 已经装好 DSH（桌面端或命令行均可）
 2. 想用本机壁纸的话，先装好 Wallpaper Engine 并订阅壁纸（只在 Windows 上能装；其它系统可以自己上传图片/视频，或把壁纸文件放到本机后用 `DSH_WE_STEAM_ROOT` 指向壁纸库）
 
-### 方式一：从 npm 安装（推荐）
+### 方式一：插件市场（推荐）
+
+DSH 插件市场内搜索「壁纸引擎」或 `dsh-we-wallpaper`，点安装即可。
+
+### 方式二：从 npm 安装
 
 ```bash
 dsh plugin add dsh-we-wallpaper
@@ -136,12 +151,12 @@ dsh plugin add dsh-we-wallpaper
 
 npm 包里已经包含构建好的 `lib/client.js`，不需要自己编译；桌面端也可以在插件管理里搜 `dsh-we-wallpaper` 安装。
 
-### 方式二：从 Releases 安装（离线 / 指定版本）
+### 方式三：从 Releases 安装（离线 / 指定版本）
 
-每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面同样包含构建好的 `lib/client.js`。当前最新版本：**v1.1.8**。
+每个版本都会打包成 `.tgz` 放到 [Releases](https://github.com/maoshiba6863/dsh-we-wallpaper/releases)，里面同样包含构建好的 `lib/client.js`。当前最新版本：**v2.1.0**。
 
 ```bash
-dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/download/v1.1.8/dsh-we-wallpaper-1.1.8.tgz
+dsh plugin add https://github.com/maoshiba6863/dsh-we-wallpaper/releases/download/v2.1.0/dsh-we-wallpaper-2.1.0.tgz
 ```
 
 桌面端也可以在插件管理里选「添加插件」，粘贴上面这个地址。
