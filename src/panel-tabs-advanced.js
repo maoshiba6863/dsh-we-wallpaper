@@ -68,7 +68,8 @@
   }
 
   function renderBillingSection(ctx) {
-    const { onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, sel } = ctx;
+    const { onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, sel } = ctx;
+    const mascot = sel.billingMascot === "whale" ? "whale" : "girl";
     const flipOn = sel.billingFlip !== false;
     return React.createElement("div", { className: "we-picker__section" },
       React.createElement("div", { className: "we-picker__section-head" },
@@ -83,6 +84,21 @@
           switchRow(weT("左右翻转"), sel.billingFlipX !== false, (e) => onBillingFlipX(e.target.checked)),
           switchRow(weT("上下翻转"), sel.billingFlipY !== false, (e) => onBillingFlipY(e.target.checked)))
         : null,
+      /* 游走动画：默认折叠，点标题展开两个子选项 */
+      React.createElement("details", { className: "we-picker__fold" },
+        React.createElement("summary", { className: "we-picker__ctl" },
+          ctlText(weT("游走动画")),
+          React.createElement("span", { className: "we-picker__fold-value" },
+            mascot === "whale" ? weT("二维鲸鱼") : weT("鲸鱼娘"))),
+        React.createElement("div", { className: "we-picker__subrows" },
+        switchRow(weT("二维鲸鱼"), mascot === "whale", () => onBillingMascot("whale"), {
+          key: "mascot-whale",
+          hint: weT("原来的鲸鱼线稿 + 七彩粒子"),
+        }),
+        switchRow(weT("鲸鱼娘"), mascot === "girl", () => onBillingMascot("girl"), {
+          key: "mascot-girl",
+          hint: weT("角色精灵：走动与随机小动作"),
+        }))),
     );
   }
 

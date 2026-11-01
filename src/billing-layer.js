@@ -201,9 +201,15 @@ function billingDuration(ms) {
 
 function BillingPeakStrip(props) {
   const peak = props.peak;
+  /* 游走动画外观：girl = 鲸鱼娘（canvas 精灵），whale = 原来的二维鲸鱼（SVG） */
+  const mascot = selection.billingMascot === "whale" ? "whale" : "girl";
+  const mascotRef = React.useRef(mascot);
+  mascotRef.current = mascot;
   const [now, setNow] = React.useState(Date.now());
   const needleRef = React.useRef(null);
   const iconRef = React.useRef(null);
+  const charRef = React.useRef(null);
+  const charDirRef = React.useRef(1);
   const dotsRef = React.useRef(null);
   const particleTimers = React.useRef([]);
   const dotCount = React.useRef(0);
@@ -238,10 +244,159 @@ function BillingPeakStrip(props) {
     const syncNow = (pct) => {
       try { el.style.left = pct + "%"; } catch {   }
     };
+    /* ── 角色精灵动画（canvas）：停靠做站立/蹲下/转圈/举手，游动切行走 ── */
+    /* 注意：切换外观时这个 effect 不会重跑，所以 canvas 与图片都要惰性获取 */
+    const charImgs = {};
+    let spritesStarted = false;
+    const charFoot = {};
+    const ensureSprites = () => {
+      if (spritesStarted) return;
+      spritesStarted = true;
+      for (const key of Object.keys(CHAR_SPRITES)) {
+        const img = new Image();
+        img.onload = () => measureFoot(key);
+        img.src = CHAR_SPRITES[key].src;
+        charImgs[key] = img;
+      }
+    };
+    const measureFoot = (key) => {
+      const set = CHAR_SPRITES[key];
+      const img = charImgs[key];
+      if (!set || !img || !img.complete || !img.naturalWidth) return;
+      try {
+        const off = document.createElement("canvas");
+        off.width = set.w; off.height = set.h;
+        const ox = off.getContext("2d");
+        ox.drawImage(img, 0, 0, set.w, set.h, 0, 0, set.w, set.h);
+        const data = ox.getImageData(0, set.h - 12, set.w, 12).data;
+        let sum = 0, cnt = 0;
+        for (let y = 0; y < 12; y += 1) {
+          for (let x = 0; x < set.w; x += 1) {
+            if (data[(y * set.w + x) * 4 + 3] > 40) { sum += x; cnt += 1; }
+          }
+        }
+        if (cnt > 0) charFoot[key] = sum / cnt;
+      } catch {   }
+    };
+    let charRaf = 0;
+    let restClock = 0;
+    let lastLeft = null;
+    let turnStart = 0;          // 掉头时播放「转圈」动作，而不是瞬间镜像
+    let walkPhase = 0;          // 走动进度：按实际位移累加，每 ~1.6px 前进一帧
+    let soloStart = 0;          // 临时动作（在端点突然蹲下/举手/转圈）
+    let soloName = "";
+    let soloSpeed = 1;          // 端点动作加速播完，不让人干等
+    /* 每次停靠重新抽动作：站一会儿 → 随机 1–2 个（蹲下 / 转圈 / 举手）→ 再站一会儿 */
+    const ACTION_MS = { crouch: 4000, spin: 4000, wave: 1300 };
+    let charPlan = [["stand", 2000]];
+    let lastPlanKey = "";
+    const rollPlan = () => {
+      /* 真正随机：每次 1–3 个动作、可重复、顺序随机；和上一套完全一样就重抽 */
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const take = 1 + Math.floor(Math.random() * 3);
+        const plan = [["stand", 1200 + Math.random() * 1400]];
+        for (let i = 0; i < take; i += 1) {
+          const name = ["crouch", "spin", "wave"][Math.floor(Math.random() * 3)];
+          plan.push([name, ACTION_MS[name]]);
+          plan.push(["stand", 500 + Math.random() * 1300]);
+        }
+        const key = plan.map((p) => p[0]).join("|");
+        if (key !== lastPlanKey) { lastPlanKey = key; charPlan = plan; return; }
+      }
+      charPlan = [["stand", 2000]];
+    };
+    const CHAR_FPS = { walk: 14, stand: 8, crouch: 24, spin: 24, wave: 10 };
+    const charDraw = () => {
+      charRaf = window.requestAnimationFrame(charDraw);
+      const canvas = charRef.current;
+      if (!canvas) return;
+      const charCtx = canvas.getContext("2d");
+      if (!charCtx) return;
+      ensureSprites();
+      const cw = 128, ch = 124;
+      charCtx.clearRect(0, 0, cw, ch);
+      let key, framePos;
+      if (soloStart) {
+        key = soloName;
+        framePos = (performance.now() - soloStart) / 1000 * (CHAR_FPS[key] || 12) * soloSpeed;
+      } else if (turnStart) {
+        key = "stand";
+        framePos = 0;
+      } else if (swimmingRef.current) {
+        restClock = 0;
+        key = "walk";
+        framePos = walkPhase;
+      } else {
+        if (!restClock) restClock = performance.now();
+        const at = performance.now() - restClock;
+        let acc = 0; key = "stand"; let local = 0;
+        let found = false;
+        for (let i = 0; i < charPlan.length; i += 1) {
+          const name = charPlan[i][0], dur = charPlan[i][1];
+          if (at < acc + dur) { key = name; local = at - acc; found = true; break; }
+          acc += dur;
+        }
+        if (!found) {
+          /* 这一轮动作放完了：重新抽一套，从头开始 */
+          rollPlan();
+          key = charPlan[0][0];
+          local = 0;
+          restClock = performance.now();
+        }
+        framePos = local / 1000 * (CHAR_FPS[key] || 10);
+      }
+      /* 朝向：按这一帧相对上一帧的位移方向决定（左移时镜像，绝不倒着走） */
+      try {
+        const nowLeft = el.getBoundingClientRect().left;
+        if (lastLeft !== null) {
+          const dx = nowLeft - lastLeft;
+          /* 关键：位移很小（慢速滑行）时也要累加，否则帧不动、人却在前移 = 漂移 */
+          if (Math.abs(dx) > 0.01) {
+            if (Math.abs(dx) > 0.4) charDirRef.current = dx > 0 ? 1 : -1;
+            walkPhase += Math.abs(dx) / 3.4;
+          }
+        }
+        lastLeft = nowLeft;
+      } catch {   }
+      const set = CHAR_SPRITES[key];
+      const img = charImgs[key];
+      if (!set || !img || !img.complete || !img.naturalWidth) return;
+      const n = set.count;
+      const idx = ((Math.floor(framePos) % n) + n) % n;
+      const sw = set.w, sh = set.h;
+      const foot = charFoot[key];
+      const dx = (foot !== undefined ? (cw / 2 - foot) : (cw - sw) / 2);
+      const dy = ch - sh;
+      const drawAt = (mirror, alpha) => {
+        charCtx.save();
+        charCtx.globalAlpha = alpha;
+        if (mirror) { charCtx.translate(cw, 0); charCtx.scale(-1, 1); }
+        charCtx.drawImage(img, idx * sw, 0, sw, sh, dx, dy, sw, sh);
+        charCtx.restore();
+      };
+      if (turnStart) {
+        /* 卡片式翻转：横向压扁到 0 再展开，中途换朝向。
+           不用双图叠加，所以没有残影。 */
+        const raw = Math.min(1, (performance.now() - turnStart) / 820);
+        const sx = Math.abs(Math.cos(Math.PI * raw));      // 1 → 0 → 1
+        const faceLeft = raw > 0.5 ? charDirRef.current > 0 : charDirRef.current < 0;
+        charCtx.save();
+        charCtx.translate(dx + sw / 2, 0);
+        charCtx.scale(sx, 1);
+        charCtx.translate(-(dx + sw / 2), 0);
+        drawAt(faceLeft, 1);
+        charCtx.restore();
+      } else {
+        drawAt(charDirRef.current < 0, 1);
+      }
+    };
+    charRaf = window.requestAnimationFrame(charDraw);
     let stopped = false;
     let timer = 0;
     let anim = null;
-    const SLOTS = [[0, -4], [0, -2], [0, 0], [0, 2], [0, 4]];
+    const SLOTS = [[0, -6], [0, -4], [0, -2], [0, 0], [0, 2], [0, 4], [0, 6]];
+    /* 出场/退场配色：赤 橙 红 绿 青 蓝 紫 */
+    const RAINBOW = ["#ff4d4f", "#ffa940", "#ff3d8b", "#4dffb8", "#35e8ff", "#5aa9ff", "#c77dff"];
     const clearParticles = () => {
       dotCount.current = 0;
       const list = particleTimers.current;
@@ -256,16 +411,26 @@ function BillingPeakStrip(props) {
       const track = el.parentElement;
       const trackW = track ? track.clientWidth : 0;
       const dist = Math.max(0, (needlePctRef.current / 100) * trackW);
-      /* 极端情况（00:00 附近）：没有飞行距离，直接显示竖线，避免标记消失。 */
+      /* 00:00 附近没有飞行距离：直接摆出 7 颗粒子（不飞），
+         这样进场/退场的配色与逐粒消失逻辑仍然一致，也不会留下一条"假粒子"。 */
       if (!(dist > 4)) {
-          const line = document.createElement("i");
-        line.className = "we-billing-peak__line";
-        dotsEl.appendChild(line);
+        clearParticles();
+        for (let i = 0; i < SLOTS.length; i += 1) {
+          const dot = document.createElement("i");
+          dot.className = "we-billing-peak__dot";
+          dot.style.left = SLOTS[i][0] + "px";
+          dot.style.top = SLOTS[i][1] + "px";
+          dot.style.animationDelay = (i * 110) + "ms";
+          dot.style.width = "2px";
+          dot.style.height = "2px";
+          dotsEl.appendChild(dot);
+        }
+        dotCount.current = SLOTS.length;
         return;
       }
       clearParticles();
       /* 只发刚好填满竖线的那几颗，填完就停，不再撒一堆。 */
-      const waves = [[0, 1], [650, 1], [1300, 1], [1950, 1], [2600, 1]];
+      const waves = [[0, 1], [800, 1], [1600, 1], [2400, 1], [3200, 1], [4000, 1], [4800, 1]];
       for (let w = 0; w < waves.length; w += 1) {
         const delay = waves[w][0];
         const count = waves[w][1];
@@ -277,21 +442,93 @@ function BillingPeakStrip(props) {
                近处时间短、走得也慢，叠 ease-out 收尾。 */
             const d0 = Math.max(0, dist);
             const span = Math.max(1, trackW || dist);
-            const duration = 1800 + 1200 * Math.min(1, d0 / span);
+            const base = 2400 + 1400 * Math.min(1, d0 / span);
+            const duration = base * (0.7 + Math.random() * 0.6);
             const jitter = (Math.random() - 0.5) * 6;
+            const size = 2.0 + Math.random() * 1.4;           // 每颗粒子大小不同
             const fly = document.createElement("i");
             fly.className = "we-billing-peak__particle";
+            /* 飞行中用彩虹色：第 w 批 = 赤→紫 的第 w 个 */
+            const flyColor = RAINBOW[w % RAINBOW.length];
+            fly.style.background = flyColor;
+            fly.style.boxShadow = "0 0 4px " + flyColor;
+            fly.style.width = size.toFixed(1) + "px";
+            fly.style.height = size.toFixed(1) + "px";
+            fly.style.marginLeft = (-size / 2).toFixed(1) + "px";
+            fly.style.marginTop = (-size / 2).toFixed(1) + "px";
             dotsEl.appendChild(fly);
             let fa = null;
             try {
-              fa = fly.animate([
-                /* 起飞时就清晰可见：从 00:00 一出来就能看到这颗粒子 */
-                { transform: "translate(" + (-d0).toFixed(1) + "px," + jitter.toFixed(1) + "px)", opacity: 0.85, filter: "brightness(0.75)" },
-                { transform: "translate(0px,0px)", opacity: 1, filter: "brightness(1)" },
-              ], { duration, easing: "ease-out", fill: "forwards" });
+              /* 沿路径上下小幅跳动：像小球在浮动前进，幅度只有 1.6px */
+              const frames = [];
+              const STEPS = 64;   // 采样要密：抖动频率最高 7 次，16 步会把正弦画成折线
+              /* 每颗的弹跳都随机：幅度 1.0–2.2px、频率 2–4 次、相位随机 */
+              const bounceAmp = 0.7 + Math.random() * 0.9;
+              const bounceFreq = 4 + Math.random() * 3;
+              const bouncePhase = Math.random() * Math.PI * 2;
+              /* 约一半的粒子会"不小心撞到上边距"，撞到后按 0.55 的阻尼回弹 */
+              const hitTop = Math.random() < 0.5;
+              const TOP_LIMIT = -8 - Math.random() * 10;      // 撞边高度也不固定
+              const wobbleAmp = 1.5 + Math.random() * 3;      // 横向随机摆动
+              const wobbleFreq = 1 + Math.random() * 2.5;
+              const wobblePhase = Math.random() * Math.PI * 2;
+              /* 前半段「弹射」：快速加速冲出 70% 的距离，并带一点上抛弧线；
+                 后半段回到现有的随机弹跳/撞边规则，慢慢靠拢竖线。 */
+              const LAUNCH = 0.5;
+              const LAUNCH_ARC = 4 + Math.random() * 5;      // 弹射时向上抛的高度
+              const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+              for (let i = 0; i <= STEPS; i += 1) {
+                const q = i / STEPS;
+                let travel, py;
+                if (q <= LAUNCH) {
+                  const lp = q / LAUNCH;
+                  travel = easeOut(lp) * 0.7;                // 前一半时间走完 70% 路程
+                  py = jitter - Math.sin(lp * Math.PI) * LAUNCH_ARC;
+                } else {
+                  const rp = (q - LAUNCH) / (1 - LAUNCH);
+                  travel = 0.7 + easeOut(rp) * 0.3;
+                  py = jitter + Math.sin(rp * Math.PI * 2 * bounceFreq + bouncePhase) * bounceAmp;
+                  if (hitTop && py < TOP_LIMIT) py = TOP_LIMIT + (TOP_LIMIT - py) * 0.55;
+                }
+                const px = -d0 * (1 - travel) + Math.sin(q * Math.PI * 2 * wobbleFreq + wobblePhase) * wobbleAmp * (q <= LAUNCH ? 0.3 : 1);
+                frames.push({
+                  transform: "translate(" + px.toFixed(1) + "px," + py.toFixed(1) + "px)",
+                  opacity: 0.85 + 0.15 * q,
+                  filter: "brightness(" + (0.75 + 0.25 * q).toFixed(2) + ")",
+                  /* 最后 10% 加速落下，动作有"扎进去"的劲 */
+                  easing: i >= STEPS - 1 ? "ease-in" : "linear",
+                });
+              }
+              fa = fly.animate(frames, { duration, easing: "linear", fill: "forwards" });
             } catch {   }
+            /* 约 45% 的粒子带 2 个残影（拖尾）：同路径、延迟 80/160ms、更小更淡 */
+            const ghosts = [];
+            if (Math.random() < 0.45) {
+              for (let g = 1; g <= 2; g += 1) {
+                const gh = document.createElement("i");
+                gh.className = "we-billing-peak__particle";
+                const gs = size * (1 - g * 0.15);
+                const fade = g === 1 ? 0.55 : 0.28;
+                gh.style.background = flyColor;
+                gh.style.boxShadow = "0 0 3px " + flyColor;
+                gh.style.width = gs.toFixed(1) + "px";
+                gh.style.height = gs.toFixed(1) + "px";
+                gh.style.marginLeft = (-gs / 2).toFixed(1) + "px";
+                gh.style.marginTop = (-gs / 2).toFixed(1) + "px";
+                gh.style.opacity = "0";
+                dotsEl.appendChild(gh);
+                try {
+                  const gFrames = frames.map((f) => Object.assign({}, f, {
+                    opacity: Number(f.opacity) * fade,
+                  }));
+                  gh.animate(gFrames, { duration, easing: "linear", delay: g * 150, fill: "forwards" });
+                } catch {   }
+                ghosts.push(gh);
+              }
+            }
             const land = () => {
               try { if (fa) fa.cancel(); } catch {   }
+              for (let g = 0; g < ghosts.length; g += 1) { try { ghosts[g].remove(); } catch {   } }
               if (!fly.isConnected) return;
               try { fly.remove(); } catch {   }
               if (!dotsEl || stopped) return;
@@ -303,6 +540,13 @@ function BillingPeakStrip(props) {
               solid.style.top = slot[1] + "px";
               solid.style.animationDelay = (dotCount.current * 130) + "ms";
               dotsEl.appendChild(solid);
+              /* 落地瞬间"啵"一下：放大 + 闪亮，让动作有落点感 */
+              try {
+                solid.animate([
+                  { transform: "scale(2.1)", filter: "brightness(2.2)" },
+                  { transform: "scale(1)", filter: "brightness(1)" },
+                ], { duration: 200, easing: "ease-out" });
+              } catch {   }
               /* 第 5 颗落地后，按固定间距重建这 5 颗：
                  不依赖每颗自己的落点误差，保证一定是鲸鱼正下方的一条竖线。 */
               if (dotCount.current >= SLOTS.length) {
@@ -315,12 +559,13 @@ function BillingPeakStrip(props) {
                   dot.style.left = SLOTS[i][0] + "px";
                   dot.style.top = SLOTS[i][1] + "px";
                   dot.style.animationDelay = (i * 110) + "ms";
+                  /* 落地后统一变成当前鲸鱼颜色（--we-peak-color），不写死颜色 */
                   dotsEl.appendChild(dot);
                 }
               }
             };
             if (fa) fa.onfinish = land; else window.setTimeout(land, duration);
-          }, delay + k * 90);
+          }, delay + k * 90 + Math.random() * 260);
           particleTimers.current.push(tid);
         }
       }
@@ -331,21 +576,80 @@ function BillingPeakStrip(props) {
       const track = el.parentElement;
       const trackW = track ? track.clientWidth : 0;
       const toRight = Math.max(40, trackW * (1 - needlePctRef.current / 100));
+      /* 自下而上退场：最下面的（紫）先走，最上面的（赤）最后走 */
       const kids = Array.prototype.slice.call(dotsEl.children)
-        .sort((a, b) => parseFloat(a.style.top || 0) - parseFloat(b.style.top || 0));
-      const STEP = 300, DUR = 2400;
+        .sort((a, b) => parseFloat(b.style.top || 0) - parseFloat(a.style.top || 0));
+      kids.forEach((k, i) => {
+        const c = RAINBOW[RAINBOW.length - 1 - i];
+        try { k.style.background = c; k.style.boxShadow = "0 0 4px " + c; } catch {   }
+      });
+      const STEP = 400, DUR = 3200;
       kids.forEach((k, i) => {
         window.setTimeout(() => {
           try {
-            const a = k.animate([
-              { transform: "translate(0px,0px)", opacity: 1 },
-              { transform: "translate(" + toRight.toFixed(0) + "px," + ((Math.random() - 0.5) * 6).toFixed(1) + "px)", opacity: 0 },
-            ], { duration: DUR, easing: "ease-out", fill: "forwards" });
+            const frames = [];
+            const STEPS = 64;   // 采样要密：抖动频率最高 7 次，16 步会把正弦画成折线
+            /* 退场也随机：幅度 0.8–1.8px、频率 2–3.5 次、相位随机 */
+            const outAmp = 0.6 + Math.random() * 0.8;
+            const outFreq = 3.5 + Math.random() * 2.5;
+            const outPhase = Math.random() * Math.PI * 2;
+            /* 和进场一致：约一半会撞上边距回弹，撞的高度随机 */
+            const hitTop = Math.random() < 0.5;
+            const TOP = -8 - Math.random() * 10;
+            for (let j = 0; j <= STEPS; j += 1) {
+              const q = j / STEPS;
+              const px = toRight * q;
+              let py = Math.sin(q * Math.PI * 2 * outFreq + outPhase) * outAmp;
+              if (hitTop && py < TOP) py = TOP + (TOP - py) * 0.55;
+              frames.push({ transform: "translate(" + px.toFixed(0) + "px," + py.toFixed(1) + "px)", opacity: 1 - q });
+            }
+            /* 退场粒子也随机大小（只改真正的粒子，不动 line） */
+            const osize = 2.0 + Math.random() * 1.4;
+            try {
+              k.style.width = osize.toFixed(1) + "px";
+              k.style.height = osize.toFixed(1) + "px";
+              k.style.marginLeft = (-osize / 2).toFixed(1) + "px";
+              k.style.marginTop = (-osize / 2).toFixed(1) + "px";
+            } catch {   }
+            const a = k.animate(frames, { duration: DUR, easing: "linear", fill: "forwards" });
             a.onfinish = () => { try { k.remove(); } catch {   } };
+            /* 约 45% 的退场粒子带 2 个残影，延迟 150/300ms */
+            if (Math.random() < 0.45) {
+              for (let g = 1; g <= 2; g += 1) {
+                const gh = document.createElement("i");
+                gh.className = "we-billing-peak__particle";
+                gh.style.background = c;
+                gh.style.boxShadow = "0 0 3px " + c;
+                const gs = osize * (1 - g * 0.15);
+                gh.style.width = gs.toFixed(1) + "px";
+                gh.style.height = gs.toFixed(1) + "px";
+                gh.style.marginLeft = (-gs / 2).toFixed(1) + "px";
+                gh.style.marginTop = (-gs / 2).toFixed(1) + "px";
+                gh.style.left = k.style.left;
+                gh.style.top = k.style.top;
+                try { dotsEl.appendChild(gh); } catch {   }
+                try {
+                  const gFrames = frames.map((f) => Object.assign({}, f, { opacity: Number(f.opacity) * (g === 1 ? 0.55 : 0.28) }));
+                  const ga = gh.animate(gFrames, { duration: DUR, easing: "linear", delay: g * 150, fill: "forwards" });
+                  ga.onfinish = () => { try { gh.remove(); } catch {   } };
+                } catch { try { gh.remove(); } catch {   } }
+              }
+            }
           } catch {   }
         }, i * STEP);
       });
-      window.setTimeout(() => { try { dotsEl.textContent = ""; } catch {   } resolve(); }, kids.length * STEP + DUR + 60);
+      window.setTimeout(() => {
+        try { dotsEl.textContent = ""; } catch {   }
+        /* 兜底清扫：退场结束后把轨道里任何残留的粒子/光点都删掉 */
+        try {
+          const scope = (el && el.parentElement) ? el.parentElement : document;
+          const rest = scope.querySelectorAll(".we-billing-peak__particle, .we-billing-peak__dot");
+          for (let n = 0; n < rest.length; n += 1) {
+            try { rest[n].remove(); } catch {   }
+          }
+        } catch {   }
+        resolve();
+      }, kids.length * STEP + DUR + 120);
     });
     const wait = (ms) => new Promise((resolve) => {
       timer = window.setTimeout(resolve, ms);
@@ -364,7 +668,7 @@ function BillingPeakStrip(props) {
       };
     });
     /* 匀速游动：整条时间轴固定 6s，不再按峰谷时段变速（红段原来 12s/整条，慢一倍）。 */
-    const glideSmart = (from, to) => glide(from, to, Math.max(140, Math.abs(to - from) * 60));
+    const glideSmart = (from, to) => glide(from, to, Math.max(120, Math.abs(to - from) * 45));
     const setSwimming = (on) => {
       try {
         if (on) el.dataset.weSwim = "1";
@@ -376,8 +680,11 @@ function BillingPeakStrip(props) {
       while (!stopped) {
         swimmingRef.current = false;             // 停靠：位置跟真实时间
         setSwimming(false);                      // 停靠：上下浮动
-        /* 停靠总时长：第 1 轮 1 分钟、第 2 轮 2 分钟 */
-        const restUntil = Date.now() + Math.min(2, round) * 60000;
+        /* 停靠总时长：二维鲸鱼沿用 1/2 分钟（要放粒子循环）；
+           鲸鱼娘只停 12 秒（做完一两个小动作就走），让「走动」成为主要状态 */
+        const restMs = mascotRef.current === "whale" ? Math.min(2, round) * 60000 : 27000;
+        rollPlan();
+        const restUntil = Date.now() + restMs;
         /* 停靠期间约 19 秒一轮：
            粒子从 00:00 飞到鲸鱼正下方排成竖线 → 呼吸 10 秒 → 朝 24:00 滑走 → 再来 */
         while (!stopped && Date.now() < restUntil) {
@@ -395,23 +702,63 @@ function BillingPeakStrip(props) {
         clearParticles();                        // 游动：清掉粒子与竖线
         swimmingRef.current = true;              // 游动：动画接管位置
         setSwimming(true);
-        el.style.transform = "perspective(260px) rotateY(0deg)";
-        /* 轨道的 0% / 100% 就是 00:00 / 24:00，鲸鱼到端点时允许探出轨道（卡片内有空间）。 */
-        const lowPct = 0;
-        const highPct = 100;
-        await glideSmart(needlePctRef.current, highPct);
-        await wait(400);                         // 到右端停稳
-        el.style.transform = "perspective(260px) rotateY(180deg)";
-        await wait(900);                         // 缓慢掉头
-        await glideSmart(highPct, lowPct);
-        await wait(400);                         // 到左端停稳
-        el.style.transform = "perspective(260px) rotateY(0deg)";
-        await wait(900);
-        await glideSmart(lowPct, needlePctRef.current);   // 掉头后游回当前时间点
+        /* 掉头：二维鲸鱼沿用原来的 rotateY 翻转；鲸鱼娘播放「转圈」素材 */
+        const turnTo = async (deg) => {
+          if (mascotRef.current === "whale") {
+            el.style.transform = "perspective(260px) rotateY(" + deg + "deg)";
+            await wait(900);
+            return;
+          }
+          /* 回头：先收步站定 → 换向 → 步态归零（从迈第一步开始），不会蹦一下 */
+          await wait(250);
+          charDirRef.current = charDirRef.current > 0 ? -1 : 1;
+          walkPhase = 0;
+        };
+        /* 轨道的 0% / 100% 就是 00:00 / 24:00，角色到端点时允许探出轨道（卡片内有空间）。 */
+        /* 端点内缩：角色宽 64px，贴到 0%/100% 会有一半被卡片裁掉，看起来就是闪一下 */
+        const lowPct = 6;
+        const highPct = 94;
+        /* 随机漫游：在「左端 / 当前时间 / 右端」之间随机挑下一站，
+           每次都走GLIDE 过去；方向变了先原地转身。绝不瞬移。 */
+        let cur = Math.max(lowPct, Math.min(highPct, needlePctRef.current));
+        let direction = 0;
+        const waypointAction = async () => {
+          if (mascotRef.current === "whale") return;
+          if (Math.random() < 0.55) {
+            soloStart = performance.now();
+            soloName = "wave";
+            soloSpeed = 1;
+            await wait(ACTION_MS.wave);
+            soloStart = 0;
+            soloName = "";
+          }
+        };
+        const goTo = async (to) => {
+          if (Math.abs(to - cur) < 3) return;
+          const dir = to > cur ? 1 : -1;
+          if (direction && dir !== direction) await turnTo(dir > 0 ? 0 : 180);
+          direction = dir;
+          await glideSmart(cur, to);
+          cur = to;
+          await wait(260);
+        };
+        const hops = 2 + Math.floor(Math.random() * 4);   // 这次出门随机走 2–5 段
+        for (let i = 0; i < hops; i += 1) {
+          const options = [lowPct, highPct, Math.max(lowPct, Math.min(highPct, needlePctRef.current))]
+            .filter((v) => Math.abs(v - cur) > 4);
+          if (!options.length) break;
+          const to = options[Math.floor(Math.random() * options.length)];
+          await goTo(to);
+          await waypointAction();
+        }
+        /* 最后走回当前时间点（如果不在那儿），同样走过去 */
+        const homePct = Math.max(lowPct, Math.min(highPct, needlePctRef.current));
+        if (Math.abs(homePct - cur) > 1) await goTo(homePct);
       }
     })();
     return () => {
       stopped = true;
+      if (charRaf) { try { window.cancelAnimationFrame(charRaf); } catch {   } }
       if (timer) window.clearTimeout(timer);
       if (anim) { try { anim.cancel(); } catch {   } }
       clearParticles();
@@ -462,7 +809,6 @@ function BillingPeakStrip(props) {
     role: "img",
     "aria-label": weT("今日计价时段：00:00 至 24:00，竖条为当前时刻，绿色平价、红色高峰"),
   },
-    React.createElement("span", { className: "we-billing-peak__tick" }, "00:00"),
     React.createElement("div", { className: "we-billing-peak__track" },
       React.createElement("span", { className: "we-billing-peak__band", "aria-hidden": "true" }),
       /* 竖条在轨道内部定位：left 百分比直接对应轨道宽度，0% = 00:00，100% = 24:00。 */
@@ -473,35 +819,59 @@ function BillingPeakStrip(props) {
         "aria-hidden": "true",
       },
         React.createElement("span", { className: "we-billing-peak__needle-icon", ref: iconRef },
-          React.createElement("svg", {
-            viewBox: "0 0 30 17",
-            width: 30,
-            height: 17,
-            className: "we-whale",
-            "aria-hidden": "true",
-            focusable: "false",
-          }, React.createElement("path", { d: WE_WHALE_PATH }))),
+          mascot === "whale"
+            ? React.createElement("svg", {
+              viewBox: "0 0 30 17",
+              width: 30,
+              height: 17,
+              className: "we-whale",
+              "aria-hidden": "true",
+              focusable: "false",
+            }, React.createElement("path", { d: WE_WHALE_PATH }))
+            : React.createElement("canvas", {
+              className: "we-char",
+              ref: charRef,
+              width: 128,
+              height: 124,
+              "aria-hidden": "true",
+            })),
         React.createElement("span", { className: "we-billing-peak__dots", ref: dotsRef })),
     ),
-    React.createElement("span", { className: "we-billing-peak__tick we-billing-peak__tick--end" }, "24:00"),
   );
 
-  return React.createElement("div", { className: "we-billing-peak" + (inPeakNow ? " we-billing-peak--peak" : "") },
+  return React.createElement("div", {
+    className: "we-billing-peak" + (inPeakNow ? " we-billing-peak--peak" : "")
+      + (mascot === "girl" ? " we-billing-peak--girl" : ""),
+  },
     timeline,
-    React.createElement("div", { className: "we-billing-peak__head" },
-      React.createElement("span", { className: "we-billing-peak__now", title: phase }, weT("当前：{phase}", { phase })),
-      React.createElement("span", { className: "we-billing-peak__time" }, weT("剩余 {time}", { time: billingDuration(Math.max(0, nextAt - now)) })),
-    ),
-    /* 图例和「09:00 转高峰」并到同一行：左图例、右切换说明。 */
-    React.createElement("div", { className: "we-billing-peak__footer" },
-      React.createElement("div", { className: "we-billing-peak__legend" },
-        React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--low" }, weT("平价")),
-        React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--peak" }, weT("高峰")),
+    mascot === "girl"
+      ? React.createElement(React.Fragment, null,
+        React.createElement("div", { className: "we-billing-peak__head" },
+          React.createElement("span", { className: "we-billing-peak__now", title: phase },
+            weT("当前：{time}", { time: new Date(now).toTimeString().slice(0, 5) })),
+          React.createElement("span", { className: "we-billing-peak__time" },
+            weT("剩余 {time}", { time: billingDuration(Math.max(0, nextAt - now)) })),
+        ),
+        React.createElement("div", { className: "we-billing-peak__head" },
+          React.createElement("span", { className: "we-billing-peak__now", title: phase }, phase),
+          React.createElement("span", {
+            className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
+          }, switchText),
+        ))
+      : React.createElement("div", { className: "we-billing-peak__head" },
+        React.createElement("span", { className: "we-billing-peak__now", title: phase }, weT("当前：{phase}", { phase })),
+        React.createElement("span", { className: "we-billing-peak__time" }, weT("剩余 {time}", { time: billingDuration(Math.max(0, nextAt - now)) })),
       ),
-      React.createElement("div", {
-        className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
-      }, switchText),
-    ),
+    /* 二维鲸鱼：图例 + 切换说明；鲸鱼娘把切换说明放第二行，这里不渲染 */
+    mascot === "whale"
+      ? React.createElement("div", { className: "we-billing-peak__footer" },
+        React.createElement("div", { className: "we-billing-peak__legend" },
+          React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--low" }, weT("平价")),
+          React.createElement("span", { className: "we-billing-peak__key we-billing-peak__key--peak" }, weT("高峰"))),
+        React.createElement("div", {
+          className: "we-billing-peak__meta" + (peakSoon ? " we-billing-peak__meta--soon" : ""),
+        }, switchText))
+      : null,
   );
 }
 
@@ -704,17 +1074,27 @@ function BillingSidebarFooter() {
     React.createElement("span", { className: "we-billing-foot__amount" }, value),
   );
 
-  const rows = [
-    row("today", weT("今日"), "≈" + billingMoney(today)),
-  ];
-  if (balance && balance.status === "ok" && Number.isFinite(Number(balance.total))) {
-    rows.push(row("balance", weT("余额"), billingBalanceMoney(balance.total, balance.currency),
-      weT("账号余额（充值 {toppedUp} · 赠送 {granted}）", {
-        toppedUp: billingBalanceMoney(balance.toppedUp, balance.currency),
-        granted: billingBalanceMoney(balance.granted, balance.currency),
-      })));
+  const mascotStyle = selection.billingMascot === "whale" ? "whale" : "girl";
+  const hasBalance = balance && balance.status === "ok" && Number.isFinite(Number(balance.total));
+  const balanceText = hasBalance ? billingBalanceMoney(balance.total, balance.currency) : "—";
+  const balanceTitle = hasBalance
+    ? weT("账号余额（充值 {toppedUp} · 赠送 {granted}）", {
+      toppedUp: billingBalanceMoney(balance.toppedUp, balance.currency),
+      granted: billingBalanceMoney(balance.granted, balance.currency),
+    })
+    : weT("余额暂不可用");
+  /* 二维鲸鱼：保持原来的两行（今日 / 余额）；鲸鱼娘：合并成一行，把空间让给角色 */
+  const nodes = [];
+  if (mascotStyle === "whale") {
+    nodes.push(row("today", weT("今日"), "≈" + billingMoney(today)));
+    if (hasBalance) {
+      nodes.push(row("balance", weT("余额"), balanceText, balanceTitle));
+    }
+  } else {
+    /* 鲸鱼娘：余额一行、今日一行（今日在余额下面） */
+    nodes.push(row("balance", weT("余额"), balanceText, balanceTitle));
+    nodes.push(row("today", weT("今日"), "≈" + billingMoney(today)));
   }
-  const nodes = rows.slice();
   if (data && data.peak) nodes.push(React.createElement(BillingPeakStrip, { key: "peak", peak: data.peak }));
   /* 「今日 AI」滚动条：数据来自 /wallpaper-engine/ai-news（服务端拉取并缓存）。 */
   nodes.push(React.createElement(AiNewsRow, { key: "ai-news" }));
