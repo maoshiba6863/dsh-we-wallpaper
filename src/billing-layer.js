@@ -718,42 +718,60 @@ function BillingPeakStrip(props) {
         /* 端点内缩：角色宽 64px，贴到 0%/100% 会有一半被卡片裁掉，看起来就是闪一下 */
         const lowPct = 6;
         const highPct = 94;
-        /* 随机漫游：在「左端 / 当前时间 / 右端」之间随机挑下一站，
-           每次都走GLIDE 过去；方向变了先原地转身。绝不瞬移。 */
-        let cur = Math.max(lowPct, Math.min(highPct, needlePctRef.current));
-        let direction = 0;
-        const waypointAction = async () => {
-          if (mascotRef.current === "whale") return;
-          if (Math.random() < 0.55) {
-            soloStart = performance.now();
-            soloName = "wave";
-            soloSpeed = 1;
-            await wait(ACTION_MS.wave);
-            soloStart = 0;
-            soloName = "";
+        if (mascotRef.current === "whale") {
+          /* 二维鲸鱼：保持原来的固定路线（右端 → 左端 → 回当前时间） */
+          el.style.transform = "perspective(260px) rotateY(0deg)";
+          await glideSmart(needlePctRef.current, highPct);
+          await wait(400);
+          el.style.transform = "perspective(260px) rotateY(180deg)";
+          await wait(900);
+          await glideSmart(highPct, lowPct);
+          await wait(400);
+          el.style.transform = "perspective(260px) rotateY(0deg)";
+          await wait(900);
+          await glideSmart(lowPct, needlePctRef.current);
+        } else {
+          /* 随机漫游：在「左端 / 当前时间 / 右端」之间随机挑下一站，
+             每次都走GLIDE 过去；方向变了先原地转身。绝不瞬移。 */
+          let cur = Math.max(lowPct, Math.min(highPct, needlePctRef.current));
+          /* 初始朝向：朝右。否则第一段往左时会"倒着滑" */
+          let direction = 1;
+          if (mascotRef.current === "whale") {
+            try { el.style.transform = "perspective(260px) rotateY(0deg)"; } catch {   }
           }
-        };
-        const goTo = async (to) => {
-          if (Math.abs(to - cur) < 3) return;
-          const dir = to > cur ? 1 : -1;
-          if (direction && dir !== direction) await turnTo(dir > 0 ? 0 : 180);
-          direction = dir;
-          await glideSmart(cur, to);
-          cur = to;
-          await wait(260);
-        };
-        const hops = 2 + Math.floor(Math.random() * 4);   // 这次出门随机走 2–5 段
-        for (let i = 0; i < hops; i += 1) {
-          const options = [lowPct, highPct, Math.max(lowPct, Math.min(highPct, needlePctRef.current))]
-            .filter((v) => Math.abs(v - cur) > 4);
-          if (!options.length) break;
-          const to = options[Math.floor(Math.random() * options.length)];
-          await goTo(to);
-          await waypointAction();
+          const waypointAction = async () => {
+            if (mascotRef.current === "whale") return;
+            if (Math.random() < 0.55) {
+              soloStart = performance.now();
+              soloName = "wave";
+              soloSpeed = 1;
+              await wait(ACTION_MS.wave);
+              soloStart = 0;
+              soloName = "";
+            }
+          };
+          const goTo = async (to) => {
+            if (Math.abs(to - cur) < 3) return;
+            const dir = to > cur ? 1 : -1;
+            if (direction && dir !== direction) await turnTo(dir > 0 ? 0 : 180);
+            direction = dir;
+            await glideSmart(cur, to);
+            cur = to;
+            await wait(260);
+          };
+          const hops = 2 + Math.floor(Math.random() * 4);   // 这次出门随机走 2–5 段
+          for (let i = 0; i < hops; i += 1) {
+            const options = [lowPct, highPct, Math.max(lowPct, Math.min(highPct, needlePctRef.current))]
+              .filter((v) => Math.abs(v - cur) > 4);
+            if (!options.length) break;
+            const to = options[Math.floor(Math.random() * options.length)];
+            await goTo(to);
+            await waypointAction();
+          }
+          /* 最后走回当前时间点（如果不在那儿），同样走过去 */
+          const homePct = Math.max(lowPct, Math.min(highPct, needlePctRef.current));
+          if (Math.abs(homePct - cur) > 1) await goTo(homePct);
         }
-        /* 最后走回当前时间点（如果不在那儿），同样走过去 */
-        const homePct = Math.max(lowPct, Math.min(highPct, needlePctRef.current));
-        if (Math.abs(homePct - cur) > 1) await goTo(homePct);
       }
     })();
     return () => {
