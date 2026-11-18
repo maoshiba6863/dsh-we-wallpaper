@@ -296,7 +296,26 @@ function applyEffects(opts) {
   else document.body.removeAttribute("data-we-thinking-glass");
 
   if (selection.chatLayout === "spread") document.body.setAttribute("data-we-chat-layout", "spread");
+
+
   else document.body.removeAttribute("data-we-chat-layout");
+
+/* 空会话（hero 布局）标记：CSS 用它把输入框压到底部。 */
+let weHeroObserver = null;
+function weHeroSync() {
+  try {
+    if (document.querySelector('[class*="composerHero"]')) document.body.setAttribute("data-we-hero", "1");
+    else document.body.removeAttribute("data-we-hero");
+  } catch {   }
+}
+function startWeHeroWatch() {
+  if (typeof document === "undefined" || typeof MutationObserver === "undefined" || weHeroObserver) return;
+  if (!document.body) { document.addEventListener("DOMContentLoaded", startWeHeroWatch, { once: true }); return; }
+  weHeroSync();
+  weHeroObserver = new MutationObserver(() => weHeroSync());
+  weHeroObserver.observe(document.body, { childList: true, subtree: true });
+}
+startWeHeroWatch();
 
   const capBlurNum = Number(selection.capsuleBlur);
   s.setProperty("--we-inline-code-blur", String(Number.isFinite(capBlurNum) ? capBlurNum : 8) + "px");
