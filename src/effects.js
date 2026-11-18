@@ -309,7 +309,7 @@ function weHeroSync() {
   } catch {   }
 }
 function startWeHeroWatch() {
-  if (typeof document === "undefined" || weHeroObserver) return;
+  if (typeof document === "undefined" || typeof MutationObserver === "undefined" || weHeroObserver) return;
   if (!document.body) { document.addEventListener("DOMContentLoaded", startWeHeroWatch, { once: true }); return; }
   weHeroSync();
   weHeroObserver = new MutationObserver(() => weHeroSync());
