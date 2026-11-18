@@ -603,6 +603,15 @@ const CSS_EXT = `  /* ── 软件渲染回退（upstream #95，运行时探测
   }
   .we-billing-peak--peak .we-billing-peak__needle-icon { color: var(--we-peak-high, #ff5f5f); }
 
+  /* 空会话（hero 布局）：把输入框压到底部，只影响新会话页面。
+     父级 scrollBody 是 justify-content:center，所以要把「座位」用 auto margin 顶下去。 */
+  body[data-we-hero="1"] [class*="composerSeat"] {
+    margin-top: auto !important;
+  }
+  body[data-we-hero="1"] [class*="composerHero"] {
+    align-self: stretch !important;
+    padding-bottom: 8px !important;
+  }
   /* 角色精灵（替代鲸鱼）：56×74 CSS，画布 2 倍分辨率；浮在时间条上方 */
   /* 今日 + 余额 合并行：左余额、右今日 */
   .we-billing-foot__row--merged {
