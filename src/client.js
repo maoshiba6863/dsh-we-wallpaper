@@ -3201,6 +3201,7 @@ function WallpaperPicker() {
     if (activeTab === "system") return React.createElement(React.Fragment, null,
 
       renderGreetingSection({ onGreetingOn, onGreetingPath, onCoverOnStartup, sel }),
+      renderVersionSection(),
       renderSessionLayoutSection({ onChatLayout, sel }),
       renderBillingSection({ onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, sel }),
       renderAdvancedTab({

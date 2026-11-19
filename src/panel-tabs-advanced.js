@@ -95,6 +95,33 @@
     );
   }
 
+  function renderVersionSection() {
+    const [info, setInfo] = React.useState(null);
+    React.useEffect(() => {
+      let alive = true;
+      apiJson("/update-check").then((r) => { if (alive) setInfo(r); }).catch(() => {   });
+      return () => { alive = false; };
+    }, []);
+    const current = (info && info.current) || "";
+    const latest = (info && info.latest) || "";
+    if (!current) return null;
+    const hasUpdate = !!(latest && latest !== current);
+    return React.createElement("div", { className: "we-picker__section" },
+      React.createElement("div", { className: "we-picker__section-head" },
+        React.createElement("span", { className: "we-picker__section-label" }, weT("插件版本")),
+      ),
+      React.createElement("div", { className: "we-picker__ctl" },
+        ctlText(weT("当前版本")),
+        React.createElement("span", { className: "we-picker__value" }, current),
+      ),
+      hasUpdate
+        ? React.createElement("div", { className: "we-picker__ctl" },
+          ctlText(weT("发现新版本")),
+          React.createElement("span", { className: "we-picker__value we-picker__value--warn" }, latest))
+        : null,
+    );
+  }
+
   function renderAdvancedCompatSection(ctx) {
     const { onEdgeCompatChange, sel } = ctx;
     return React.createElement(React.Fragment, null,
