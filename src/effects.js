@@ -285,6 +285,7 @@ function applyEffects(opts) {
   s.setProperty("--we-surface-tint-rgb-dark", toRgbTriple(weClampSurfaceColor(glassTintDark, "dark", glassFidelity)));
 
   applyGlass(selection, s);
+  themeFollowSyncClock();
 
   syncExtraGlassCss(selection);
 
@@ -379,6 +380,7 @@ startWeHeroWatch();
 
 function clearEffects() {
   const s = document.body.style;
+  themeFollowStopClock();
 
   disarmFadeBgThemeWatch();
   lastFadeBg = "";
