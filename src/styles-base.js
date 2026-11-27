@@ -559,36 +559,25 @@ const CSS_BASE = `
     --we-popup-row-ink: var(--we-popup-row-ink-dark, var(--dsw-alias-label-primary, #e6e8eb));
   }
 
-  /* Readability is independent of theme-follow: even a light theme can sit on
-     a dark wallpaper. A small, opposite-tone text halo protects exposed text
-     without replacing user font colours or adding another compositing layer.
+  /* Solid foregrounds stay crisp at small sizes. Theme-follow remains the
+     separate control for matching a dark wallpaper to a dark UI palette.
      The existing border slider remains authoritative, including zero. */
   body[data-we-glass-page][data-we-readability] {
     --we-readable-border: rgba(45, 55, 72, min(1, calc(var(--we-border-alpha, 0.35) * 1.5)));
-    --we-text-halo: rgba(255, 255, 255, 0.95);
     --we-focus-ink: #172033;
     --we-focus-halo: #ffffff;
   }
   body[data-ds-dark-theme][data-we-glass-page][data-we-readability] {
     --we-readable-border: rgba(235, 241, 255, min(1, calc(var(--we-border-alpha, 0.35) * 1.5)));
-    --we-text-halo: rgba(0, 0, 0, 0.95);
     --we-focus-ink: #f4f7ff;
     --we-focus-halo: #101418;
+    --dsw-alias-label-primary: #f4f7fc;
+    --dsw-alias-label-primary-dimmed: #e3e9f2;
+    --dsw-alias-label-secondary: #d2dbe8;
+    --dsw-alias-label-tertiary: #b9c6d8;
+    --dsw-alias-label-caption: #aab9cd;
+    --dsw-alias-label-dimmed: #9cacc2;
   }
-  body[data-we-wallpaper][data-we-glass-page][data-we-readability] {
-    text-shadow: 0 1px 2px var(--we-text-halo), 0 0 2px var(--we-text-halo);
-  }
-  body[data-we-wallpaper][data-we-glass-page][data-we-readability] :where(button, a) {
-    text-shadow: inherit;
-  }
-  /* These surfaces already have their own readability floor. Keep code,
-     terminal output, editable text and popup typography crisp. */
-  body[data-we-glass-page][data-we-readability] :where(
-    pre, code, .xterm, input, textarea, [contenteditable="true"],
-    [role="dialog"], [role="tooltip"], [data-composer-card],
-    [data-question-key], [data-plan-review-key], [data-approval-key],
-    .we-picker__modal, .we-qp
-  ) { text-shadow: none; }
   /* Inset outlines do not change layout or replace the glass shadows. */
   body[data-we-glass-page][data-we-readability] :where(
     [data-composer-card], [role="dialog"]:has([data-slot="settings.section"]),
