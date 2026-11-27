@@ -2371,6 +2371,7 @@ const onScrim = (pct, live) => commitLiveSetting("scrim", pct / 100, live);
 const onWallpaperOpacity = (pct, live) =>
   commitLiveSetting("wallpaperOpacity", clampNum(pct, ...schemaRange("wallpaperOpacity"), DEFAULTS.wallpaperOpacity), live);
 const onBorder = (pct, live) => commitLiveSetting("border", pct / 100, live);
+const onReadabilityBoost = (v) => { setSetting("readabilityBoost", !!v); emit(); };
 const onBlur = (px, live) => commitLiveSetting("blur", px, live);
 const onWallpaperBlur = (px, live) => commitLiveSetting("wallpaperBlur", px, live);
 const onBackgroundBrightness = (pct, live) => commitLiveSetting("backgroundBrightness", pct, live);
@@ -3187,7 +3188,7 @@ function WallpaperPicker() {
 
       uiColorOpen: pickerUiColorOpen, onToggleUiColorSection: togglePickerUiColorSection,
       onToggleUiColorCustom, onUiColorElement,
-      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
+      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onReadabilityBoost, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
 
       onToggleChildIndependent, onGlassChildParam, childIndependentOn,
 

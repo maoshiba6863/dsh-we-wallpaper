@@ -47,7 +47,7 @@ const CSS_SIDEBAR = `  /* ── 左侧栏液态玻璃（宿主原生左栏的�
        ⚠️ 必须是**显式 none**，不能只是删掉那行声明：非 darwin 壳层自己有一条读
        --dsw-alias-border-l3 的边框，删声明会让它在别的平台上回来。判据见
        verify-glass-compositing 的 S2（含"种回发丝线即判红"的负对照）。 */
-    --dsw-alias-border-l3: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
+    --dsw-alias-border-l3: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
     border-right: none;
     /* 配色：与设置窗口同一组 accent 映射（选中 / 悬停行 = interactive-bg-hover，
        业务状态点 = state-business-primary，链接与强调文字 = brand-*），

@@ -36,13 +36,17 @@
   }
 
   function renderAppearanceDetailSection(ctx) {
-    const { onBorder, onResetModule, sel, detailOpen, onToggleDetailSection } = ctx;
+    const { onBorder, onReadabilityBoost, onResetModule, sel, detailOpen, onToggleDetailSection } = ctx;
 
     const open = detailOpen === true;
     return React.createElement(React.Fragment, null,
 
     React.createElement("div", { className: "we-picker__section" },
       sectionHead(weT("细节"), open, onToggleDetailSection, moduleResetButton("detail", onResetModule)),
+      open && switchRow(weT("文字与边框增强"), sel.readabilityBoost !== false, (e) => onReadabilityBoost(e.target.checked), {
+        key: "readability-boost",
+        hint: weT("给壁纸上的文字增加轮廓，增强面板边界与键盘焦点（默认开）"),
+      }),
       open && SliderRow(weT("边框"), 0, 90, 5, Math.round(sel.border * 100), onBorder, Math.round(sel.border * 100) + "%", "border-emphasis", {
         tooltip: weT("提高边框 / 分割线的对比度（浅色与深色主题通用）"),
       }),

@@ -6,7 +6,7 @@ const toRgbTriple = (hex) => {
 function applyGlass(selection, s) {
 
   if (typeof skinYieldActive === "function" && skinYieldActive()) {
-    for (const attr of ["data-we-glass-page", "data-we-glass-chat", "data-we-glass-window",
+    for (const attr of ["data-we-glass-page", "data-we-readability", "data-we-glass-chat", "data-we-glass-window",
       "data-we-left-sidebar", "data-we-titlebar-glass", "data-we-sidebar-glass", "data-we-sidebar-fullclear", "data-we-glass-floaters"]) {
       document.body.removeAttribute(attr);
     }
@@ -14,6 +14,8 @@ function applyGlass(selection, s) {
   }
 
   document.body.setAttribute("data-we-glass-page", "on");
+  if (selection.readabilityBoost !== false) document.body.setAttribute("data-we-readability", "on");
+  else document.body.removeAttribute("data-we-readability");
 
   const glassModeOn = (surface) => {
     const rec = selection.glassMode;

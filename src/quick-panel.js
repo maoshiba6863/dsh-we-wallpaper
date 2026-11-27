@@ -351,7 +351,7 @@
       setSetting, setTransient, sel,
 
       onResetModule,
-      onAccent, onBlur, onBorder, onChatGlassFidelity, onChatLayout, onExtraGlassSelectors, onGlassAlpha, onGlassColor, onGlassFidelity, onLeftSidebarGlass, onTitlebarGlass, onSidebarGlass, onSidebarFullClear, onToggleThemeFollow,
+      onAccent, onBlur, onBorder, onReadabilityBoost, onChatGlassFidelity, onChatLayout, onExtraGlassSelectors, onGlassAlpha, onGlassColor, onGlassFidelity, onLeftSidebarGlass, onTitlebarGlass, onSidebarGlass, onSidebarFullClear, onToggleThemeFollow,
 
       onSidebarAllCorners, onSidebarCornerRadius, onSidebarCornerSquare,
       onCaretColor, onSidebarFollowGlobal, onThinkingMode,
