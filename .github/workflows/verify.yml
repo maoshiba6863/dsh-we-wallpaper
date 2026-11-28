@@ -66,6 +66,9 @@ jobs:
       - name: build —— 重建 lib/client.js
         run: npm run build
 
+      - name: verify:ui —— React 设置页切换与交互回归
+        run: npm run verify:ui
+
       - name: verify —— 结构性守卫（含正/负对照）
         run: npm run verify
 

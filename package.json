@@ -119,6 +119,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "verify:static": "node test/verify-static.mjs",
+    "verify:ui": "node test/verify-settings-ui.mjs",
     "smoke": "node test/run-guards.mjs smoke",
     "verify:all": "node test/run-guards.mjs all",
     "prepack": "node scripts/prepare.mjs"
@@ -152,6 +153,8 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
     "eslint": "^10.12.0",
+    "react": "18.3.1",
+    "react-test-renderer": "18.3.1",
     "typescript": "^7.0.2"
   }
 }

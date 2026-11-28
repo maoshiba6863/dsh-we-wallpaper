@@ -320,6 +320,7 @@ macOS 需要给「辅助功能」和「自动化」授权，设置页里有逐�
 npm install          # 装依赖
 npm run build        # 把 src/ 的界面源码打包成 lib/client.js
 npm run verify:all   # 构建 + 全部守卫测试 + 冒烟
+npm run verify:ui    # 构建后使用真实 React 验证设置页切换与控件交互
 npm run verify       # 只跑守卫
 npm run smoke        # 只跑冒烟
 npm run lint         # ESLint
