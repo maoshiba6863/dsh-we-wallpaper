@@ -208,7 +208,7 @@ const INLINE_MODULES = [
   {
     file: 'src/panel-tabs-appearance.js',
     why: '「外观」页签的节渲染器与字体一族（原 src/panel-tabs.js 的 520–1125 行原样搬移）',
-    markers: ['function renderAppearanceThemeSection(ctx) {', '    const { onResetModule, onToggleThemeFollow, sel } = ctx;'],
+    markers: ['function renderAppearanceThemeSection(ctx) {', '    const { onResetModule, onToggleThemeFollow, onThemeTime, onWallpaperTheme, sel } = ctx;'],
   },
   {
     file: 'src/panel-tabs-effects.js',

@@ -271,9 +271,9 @@ const CSS_BASE = `
       rgba(var(--we-surface-tint-rgb-light, 255, 255, 255), calc(var(--we-glass-alpha, 0.15) * 1.15)) calc((1 - var(--we-readability-floor)) * 100%));
     /* Border emphasis: neutral gray so it reads on both light and dark themes;
        alpha is driven by the "边框" slider through --we-border-alpha. */
-    --dsw-alias-border-l1: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
-    --dsw-alias-border-l2: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
-    --dsw-alias-border-l2-darkmode-thin: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
+    --dsw-alias-border-l1: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
+    --dsw-alias-border-l2: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
+    --dsw-alias-border-l2-darkmode-thin: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
   }
   /* DSH rc.7+ injects the theme palette (design-platform.css) as a plugin-owned
      stylesheet appended to <head> AFTER this one, so in dark mode the shell's
@@ -372,9 +372,9 @@ const CSS_BASE = `
     --dsw-alias-markdown-code-segment-selected: color-mix(in srgb,
       var(--we-readability-base) calc(var(--we-readability-floor) * 100%),
       rgba(var(--we-surface-tint-rgb-dark, 13, 21, 36), calc(var(--we-glass-alpha, 0.15) * 1.15)) calc((1 - var(--we-readability-floor)) * 100%));
-    --dsw-alias-border-l1: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
-    --dsw-alias-border-l2: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
-    --dsw-alias-border-l2-darkmode-thin: rgba(180, 180, 180, var(--we-border-alpha, 0.35));
+    --dsw-alias-border-l1: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
+    --dsw-alias-border-l2: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
+    --dsw-alias-border-l2-darkmode-thin: var(--we-readable-border, rgba(180, 180, 180, var(--we-border-alpha, 0.35)));
   }
 
   /* #73 增强模式 + Win10（无 Mica）：桌面外壳只在系统材质可用时让左侧工作区
@@ -559,6 +559,45 @@ const CSS_BASE = `
     --we-popup-row-ink: var(--we-popup-row-ink-dark, var(--dsw-alias-label-primary, #e6e8eb));
   }
 
+  /* Solid foregrounds stay crisp at small sizes. Theme-follow remains the
+     separate control for matching a dark wallpaper to a dark UI palette.
+     The existing border slider remains authoritative, including zero. */
+  body[data-we-glass-page][data-we-readability] {
+    --we-readable-border: rgba(45, 55, 72, min(1, calc(var(--we-border-alpha, 0.35) * 1.5)));
+    --we-focus-ink: #172033;
+    --we-focus-halo: #ffffff;
+  }
+  body[data-ds-dark-theme][data-we-glass-page][data-we-readability] {
+    --we-readable-border: rgba(235, 241, 255, min(1, calc(var(--we-border-alpha, 0.35) * 1.5)));
+    --we-focus-ink: #f4f7ff;
+    --we-focus-halo: #101418;
+    --dsw-alias-label-primary: #f4f7fc;
+    --dsw-alias-label-primary-dimmed: #e3e9f2;
+    --dsw-alias-label-secondary: #d2dbe8;
+    --dsw-alias-label-tertiary: #b9c6d8;
+    --dsw-alias-label-caption: #aab9cd;
+    --dsw-alias-label-dimmed: #9cacc2;
+  }
+  /* Inset outlines do not change layout or replace the glass shadows. */
+  body[data-we-glass-page][data-we-readability] :where(
+    [data-composer-card], [role="dialog"]:has([data-slot="settings.section"]),
+    .we-picker__modal
+  ) {
+    outline: 1px solid var(--we-readable-border);
+    outline-offset: -1px;
+  }
+  body[data-we-glass-page][data-we-readability] :where(
+    button, a[href], input, select, textarea, summary, [role="button"], [tabindex]
+  ):focus-visible {
+    outline: 2px solid var(--we-focus-ink);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--we-focus-halo);
+  }
+  /* Metadata used to fade twice (theme grey plus opacity: .55). */
+  body[data-we-glass-page][data-we-readability] .we-picker__current-meta {
+    opacity: 1;
+    color: var(--we-ink-2, var(--dsw-alias-label-secondary));
+  }
 `;
 
 export { CSS_BASE };

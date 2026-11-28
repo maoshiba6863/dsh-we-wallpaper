@@ -199,7 +199,7 @@ section('⑦ 安装期不得跑任何仓库脚本（无构建钩子 + 不引用�
   const INSTALL_HOOKS = ['preinstall', 'install', 'postinstall', 'prepare'];
   const DEV_ONLY = ['prepublishOnly', 'prepack', 'postpack', 'prepublish',
     'build', 'verify', 'verify:docs', 'verify:all', 'verify:bridge', 'verify:e2e', 'smoke',
-    'verify:static'];
+    'verify:static', 'verify:ui'];
   const unshippedRefs = (cmd) => [...String(cmd)
     .matchAll(/(?:^|\s)((?:scripts|src|test|docs|\.test-cache)\/[\w./-]+)/g)]
     .map((m) => m[1]).filter((p) => !publishSet(p));

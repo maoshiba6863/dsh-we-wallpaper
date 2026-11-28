@@ -29,6 +29,8 @@ const VERIFY_STEPS = [
   step('test/verify-occlusion-client.mjs'),
   step('test/verify-adapter.mjs'),
   step('test/verify-theme-follow.mjs'),
+  step('test/verify-readability.mjs'),
+  step('test/verify-theme-clock.mjs'),
   step('test/verify-logging.mjs'),
   step('test/verify-media-bridge.mjs', ['--allow-skip'], 'soft', true),
   step('test/verify-media-probe.mjs'),

@@ -12,6 +12,65 @@ let themeFollowPreviewVerdict = "";
 let themeFollowFrameVerdict = "";
 let themeFollowSchemeProvided = false;
 let themeFollowLastLine = "";
+let themeClockTimer = null;
+let themeClockListening = false;
+function themeFollowManualMode(sel) {
+  const mode = sel && sel.wallpaperThemes && sel.wallpaperThemes[sel.id];
+  return mode === "dark" || mode === "light" || mode === "time" ? mode : "";
+}
+function themeFollowClockVerdict(sel, now = new Date()) {
+  const day = Number.isFinite(sel.themeDayStart) ? sel.themeDayStart : 420;
+  const night = Number.isFinite(sel.themeNightStart) ? sel.themeNightStart : 1140;
+  const minute = now.getHours() * 60 + now.getMinutes();
+  const daytime = day < night ? minute >= day && minute < night : minute >= day || minute < night;
+  return daytime ? "light" : "dark";
+}
+function themeFollowClockDelay(sel, now = new Date()) {
+  const boundaries = [sel.themeDayStart, sel.themeNightStart].map((v, i) => Number.isFinite(v) ? v : [420, 1140][i]);
+  return Math.min(3600000, ...boundaries.map((minute) => {
+    const next = new Date(now.getTime());
+    next.setHours(Math.floor(minute / 60), minute % 60, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    return Math.max(1, next.getTime() - now.getTime());
+  }));
+}
+function themeFollowTimeText(minute) {
+  return String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
+}
+function themeFollowStopClock() {
+  if (typeof window === "undefined") return;
+  if (themeClockTimer !== null) window.clearTimeout(themeClockTimer);
+  themeClockTimer = null;
+  if (themeClockListening) {
+    window.removeEventListener("pageshow", themeFollowClockResume);
+    if (typeof document !== "undefined") document.removeEventListener("visibilitychange", themeFollowClockResume);
+    themeClockListening = false;
+  }
+}
+function themeFollowClockResume() {
+  if (typeof document !== "undefined" && document.hidden) return;
+  themeFollowStopClock();
+  themeFollowSyncClock();
+}
+function themeFollowSyncClock() {
+  const active = themeFollowEnabled() && !!selection.id && themeFollowManualMode(selection) === "time"
+    && !themeFollowYield && !themeFollowSkinYielded() && !!themeFollowService;
+  if (!active) { themeFollowStopClock(); return; }
+  if (themeClockTimer !== null) return;
+  const verdict = themeFollowClockVerdict(selection);
+  themeFollowLastLine = weT(verdict === "dark" ? "系统时间 · 夜间 · 浅色文字" : "系统时间 · 白天 · 深色文字");
+  themeFollowApply(verdict);
+  if (typeof window === "undefined" || !window.setTimeout) return;
+  if (!themeClockListening && window.addEventListener) {
+    window.addEventListener("pageshow", themeFollowClockResume);
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", themeFollowClockResume);
+    themeClockListening = true;
+  }
+  themeClockTimer = window.setTimeout(() => {
+    themeClockTimer = null;
+    themeFollowSyncClock();
+  }, themeFollowClockDelay(selection));
+}
 function themeFollowEnabled() {
   try {
     return typeof selection !== "undefined" && !!selection && selection.themeFollow === true;
@@ -21,6 +80,7 @@ function themeFollowSkinYielded() {
   try { return typeof skinYieldActive === "function" && skinYieldActive() === true; } catch { return false; }
 }
 function themeFollowClearState() {
+  themeFollowStopClock();
   const hadLine = !!themeFollowLastLine;
   themeFollowYield = false;
   themeFollowRank = 0;
@@ -161,7 +221,8 @@ function themeFollowOnWallpaper(sel, opts) {
   if (themeFollowSkinYielded()) return;
   if (!themeFollowService) return;
   const id = String((sel && sel.id) || "");
-  if (id !== themeFollowWallpaperId) {
+  if (id !== themeFollowWallpaperId || (opts && opts.userChoice)) {
+    themeFollowStopClock();
     themeFollowWallpaperId = id;
     if (!(opts && opts.fromSkinRestore)) {
       themeFollowYield = false;
@@ -172,6 +233,14 @@ function themeFollowOnWallpaper(sel, opts) {
   themeFollowPreviewVerdict = "";
   themeFollowFrameVerdict = "";
   themeFollowLastLine = "";
+  const manual = themeFollowManualMode(sel);
+  if (manual) {
+    themeFollowSchemeProvided = true;
+    if (manual === "time") { themeFollowSyncClock(); return; }
+    themeFollowLastLine = weT(manual === "dark" ? "手动标记：深色壁纸 · 浅色文字" : "手动标记：浅色壁纸 · 深色文字");
+    themeFollowApply(manual);
+    return;
+  }
   const scheme = themeFollowSchemeColorOf(sel);
   if (scheme) {
     themeFollowSchemeProvided = true;
@@ -190,6 +259,7 @@ function themeFollowOnWallpaper(sel, opts) {
   });
 }
 function themeFollowRelease() {
+  themeFollowStopClock();
   if (!themeFollowEnabled()) return;
   if (!themeFollowService) return;
   if (themeFollowYield) return;
@@ -237,6 +307,7 @@ function themeFollowDescribe(source, rgb, verdict) {
 function themeFollowOnFrameCanvas(canvas) {
   if (!themeFollowEnabled()) return;
   if (themeFollowSkinYielded()) return;
+  if (themeFollowManualMode(selection)) return;
   try {
     if (!canvas || typeof document === "undefined") return;
     const probe = document.createElement("canvas");
@@ -252,6 +323,7 @@ function themeFollowOnFrameCanvas(canvas) {
 function themeFollowOnFrameImage(url) {
   if (!themeFollowEnabled()) return;
   if (themeFollowSkinYielded()) return;
+  if (themeFollowManualMode(selection)) return;
   themeFollowDominantColorOf(url).then((rgb) => themeFollowAcceptImageVerdict(rgb, 2));
 }
 function themeFollowAttach(theme, ctx) {
@@ -273,4 +345,6 @@ export {
   themeFollowParseColor, themeFollowLuminance, themeFollowVerdict, themeFollowModeColorOf,
   themeFollowIsUnfilledSchemeColor, themeFollowSchemeColorOf, themeFollowOnWallpaper, themeFollowAttach,
   themeFollowAcceptImageVerdict, themeFollowOnFrameCanvas, themeFollowOnFrameImage, themeFollowRelease,
+  themeFollowManualMode, themeFollowSyncClock, themeFollowStopClock,
+  themeFollowClockVerdict, themeFollowClockDelay, themeFollowTimeText,
 };

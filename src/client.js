@@ -2371,6 +2371,7 @@ const onScrim = (pct, live) => commitLiveSetting("scrim", pct / 100, live);
 const onWallpaperOpacity = (pct, live) =>
   commitLiveSetting("wallpaperOpacity", clampNum(pct, ...schemaRange("wallpaperOpacity"), DEFAULTS.wallpaperOpacity), live);
 const onBorder = (pct, live) => commitLiveSetting("border", pct / 100, live);
+const onReadabilityBoost = (v) => { setSetting("readabilityBoost", !!v); emit(); };
 const onBlur = (px, live) => commitLiveSetting("blur", px, live);
 const onWallpaperBlur = (px, live) => commitLiveSetting("wallpaperBlur", px, live);
 const onBackgroundBrightness = (pct, live) => commitLiveSetting("backgroundBrightness", pct, live);
@@ -2475,6 +2476,21 @@ const onChatGlassFidelity = (pct, live) =>
 
 const onToggleThemeFollow = (v) => {
   setSetting("themeFollow", !!v); themeFollowOnWallpaper(selection); emit();
+};
+const onThemeTime = (field, value) => {
+  if (field !== "themeDayStart" && field !== "themeNightStart") return;
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match || Number(match[1]) > 23 || Number(match[2]) > 59) return;
+  setSetting(field, Number(match[1]) * 60 + Number(match[2]));
+  themeFollowOnWallpaper(selection, { userChoice: true }); emit();
+};
+const onWallpaperTheme = (mode) => {
+  if (!selection.id) return;
+  const modes = { ...selection.wallpaperThemes };
+  if (mode === "dark" || mode === "light" || mode === "time") modes[selection.id] = mode;
+  else delete modes[selection.id];
+  setSetting("wallpaperThemes", modes);
+  themeFollowOnWallpaper(selection, { userChoice: true }); emit();
 };
 
 const onChatLayout = (v) => { setSetting("chatLayout", v === "spread" ? "spread" : "center"); emit(); };
@@ -3187,7 +3203,7 @@ function WallpaperPicker() {
 
       uiColorOpen: pickerUiColorOpen, onToggleUiColorSection: togglePickerUiColorSection,
       onToggleUiColorCustom, onUiColorElement,
-      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, sel,
+      officialColorOf, onAccent, onCapsuleBlur, onCapsuleColor, onBlur, onBorder, onReadabilityBoost, onCaretColor, onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, onChatGlassFidelity, onChatLayout, onComponentFamily, onComponentFont, onExtraGlassSelectors, onFontAdvanced, onFontResetAll, onGlassAlpha, onGlassColor, onGlassDarkSeparate, onGlassFidelity, onGlobalFamily, onLeftSidebarGlass, onTitlebarGlass, onRefreshSystemFonts, onSidebarAllCorners, onSidebarAlpha, onSidebarBlur, onSidebarColor, onSidebarContentAlpha, onSidebarContentColor, onSidebarCornerRadius, onSidebarCornerSquare, onSidebarFollowGlobal, onSidebarGlass, onSidebarFullClear, onThemeColor, onThemeColorClear, onThemeDarkSeparate, onThemeFamily, onThemeSize, onThemeTypeOnly, onThemeWeight, onThinkingMode, onToggleFontCustom, onToggleThemeFollow, onThemeTime, onWallpaperTheme, sel,
 
       onToggleChildIndependent, onGlassChildParam, childIndependentOn,
 
@@ -3201,7 +3217,7 @@ function WallpaperPicker() {
     if (activeTab === "system") return React.createElement(React.Fragment, null,
 
       renderGreetingSection({ onGreetingOn, onGreetingPath, onCoverOnStartup, sel }),
-      renderVersionSection(),
+      React.createElement(VersionSection, null),
       renderSessionLayoutSection({ onChatLayout, sel }),
       renderBillingSection({ onBillingEnabled, onBillingFlip, onBillingFlipX, onBillingFlipY, onBillingMascot, sel }),
       renderAdvancedTab({

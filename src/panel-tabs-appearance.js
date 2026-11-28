@@ -14,7 +14,7 @@
   }
 
   function renderAppearanceThemeSection(ctx) {
-    const { onResetModule, onToggleThemeFollow, sel } = ctx;
+    const { onResetModule, onToggleThemeFollow, onThemeTime, onWallpaperTheme, sel } = ctx;
     return React.createElement(React.Fragment, null,
 
     React.createElement("div", { className: "we-picker__section" },
@@ -25,9 +25,25 @@
 
       switchRow(weT("主题随壁纸"), sel.themeFollow === true, (e) => onToggleThemeFollow(e.target.checked), {
         key: "theme-follow",
-        hint: weT("试验性功能 · 关 = 不按壁纸自动改深浅主题（默认关）"),
-        tooltip: weT("试验性功能：开着时按当前壁纸自动切全局深/浅：作者配色 → 画面主色，两条腿不一致时取深色；在 DSH 设置里手动改过主题后，本张壁纸不再自动。关（默认）时这个功能整体不生效：不取色、不判决、不改主题；切换开关立刻生效。"),
+        hint: weT("深色背景配浅色字，浅色背景配深色字；关 = 不按壁纸自动改深浅主题（默认关）"),
+        tooltip: weT("匹配文字与玻璃表面的深浅。可为每张壁纸选择深色、浅色或随时间；随时间仅使用本机时钟，不读取画面。在 DSH 设置里手动改主题后，本张壁纸暂停跟随。"),
       }),
+      sel.themeFollow === true && sel.id && appearanceSegRow("wallpaper-theme", weT("当前壁纸明暗"),
+        weT("只记住这张壁纸；随时间适合昼夜壁纸"), [
+          { id: "auto", label: weT("取色"), hint: weT("沿用原有作者配色与预览取色") },
+          { id: "time", label: weT("随时间"), hint: weT("按本机系统时间切换，不读取画面") },
+          { id: "dark", label: weT("深色壁纸"), hint: weT("使用深色界面与浅色文字") },
+          { id: "light", label: weT("浅色壁纸"), hint: weT("使用浅色界面与深色文字") },
+        ], (sel.wallpaperThemes || {})[sel.id] || "auto", onWallpaperTheme),
+      sel.themeFollow === true && (sel.wallpaperThemes || {})[sel.id] === "time"
+        && React.createElement("div", { className: "we-picker__ctl we-picker__ctl--wrap", key: "theme-clock" },
+          ctlText(weT("昼夜时段"), weT("本机时间；白天用深色字，夜间用浅色字。请与壁纸的昼夜设置对应")),
+          React.createElement("label", { className: "we-picker__row" }, weT("白天开始"),
+            React.createElement("input", { type: "time", className: "we-picker__text", "aria-label": weT("白天开始"),
+              value: themeFollowTimeText(sel.themeDayStart), onChange: (e) => onThemeTime("themeDayStart", e.target.value) })),
+          React.createElement("label", { className: "we-picker__row" }, weT("夜间开始"),
+            React.createElement("input", { type: "time", className: "we-picker__text", "aria-label": weT("夜间开始"),
+              value: themeFollowTimeText(sel.themeNightStart), onChange: (e) => onThemeTime("themeNightStart", e.target.value) }))),
       sel.themeFollow === true && sel.themeFollowLine
         && React.createElement("div", { className: "we-picker__hint", key: "theme-follow-line" },
           weT("当前：{line}", { line: weT(sel.themeFollowLine) })),
@@ -36,13 +52,17 @@
   }
 
   function renderAppearanceDetailSection(ctx) {
-    const { onBorder, onResetModule, sel, detailOpen, onToggleDetailSection } = ctx;
+    const { onBorder, onReadabilityBoost, onResetModule, sel, detailOpen, onToggleDetailSection } = ctx;
 
     const open = detailOpen === true;
     return React.createElement(React.Fragment, null,
 
     React.createElement("div", { className: "we-picker__section" },
       sectionHead(weT("细节"), open, onToggleDetailSection, moduleResetButton("detail", onResetModule)),
+      open && switchRow(weT("文字与边框增强"), sel.readabilityBoost !== false, (e) => onReadabilityBoost(e.target.checked), {
+        key: "readability-boost",
+        hint: weT("提升文字对比度、面板边界与键盘焦点（默认开）；暗色壁纸建议搭配深色主题"),
+      }),
       open && SliderRow(weT("边框"), 0, 90, 5, Math.round(sel.border * 100), onBorder, Math.round(sel.border * 100) + "%", "border-emphasis", {
         tooltip: weT("提高边框 / 分割线的对比度（浅色与深色主题通用）"),
       }),

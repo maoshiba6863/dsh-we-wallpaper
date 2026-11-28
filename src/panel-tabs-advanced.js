@@ -95,11 +95,11 @@
     );
   }
 
-  function renderVersionSection() {
+  function VersionSection() {
     const [info, setInfo] = React.useState(null);
     React.useEffect(() => {
       let alive = true;
-      apiJson("/update-check").then((r) => { if (alive) setInfo(r); }).catch(() => {   });
+      apiJson("/update-check").then((r) => { if (alive && r.ok) setInfo(r.data); }).catch(() => {   });
       return () => { alive = false; };
     }, []);
     const current = (info && info.current) || "";

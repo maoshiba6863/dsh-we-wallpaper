@@ -285,6 +285,7 @@ function applyEffects(opts) {
   s.setProperty("--we-surface-tint-rgb-dark", toRgbTriple(weClampSurfaceColor(glassTintDark, "dark", glassFidelity)));
 
   applyGlass(selection, s);
+  themeFollowSyncClock();
 
   syncExtraGlassCss(selection);
 
@@ -379,6 +380,7 @@ startWeHeroWatch();
 
 function clearEffects() {
   const s = document.body.style;
+  themeFollowStopClock();
 
   disarmFadeBgThemeWatch();
   lastFadeBg = "";
@@ -414,6 +416,7 @@ function clearEffects() {
   document.body.removeAttribute("data-we-glass-window");
 
   document.body.removeAttribute("data-we-glass-page");
+  document.body.removeAttribute("data-we-readability");
   document.body.removeAttribute("data-we-chat-layout");
   document.body.removeAttribute("data-we-left-sidebar");
 
